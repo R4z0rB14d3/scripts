@@ -48,7 +48,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	Timer timer = new Timer(0);
 
 	public static GUI gui;
-	
+
 	int initialFarmingLevel;
 	int initialFarmingExp;
 
@@ -65,12 +65,12 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public ScriptLoader loader;
 	public Banker banker;
 	public RunOtherScriptv2 MODULE_RUN_SCRIPT;
-	
+
 	BufferedImage proggy;
 
 	protected void setup() {
 		try {
-			
+
 			BufferedImage img;
 			try {
 				File imgPath = new File("src/scripts/farming/images/proggy.png");
@@ -80,18 +80,19 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					int w = img.getWidth(null);
 					int h = img.getHeight(null);
 					System.out.println("Width: " + h);
-					proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+					proggy = new BufferedImage(w, h,
+							BufferedImage.TYPE_INT_ARGB);
 					Graphics g = proggy.getGraphics();
 					g.drawImage(img, 0, 0, null);
 				}
 			} catch (IOException e) {
-				proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
+				proggy = new BufferedImage(0, 0, BufferedImage.TYPE_INT_RGB);
 				e.printStackTrace();
 			}
-			
+
 			initialFarmingLevel = Skills.getLevel(Skills.FARMING);
 			initialFarmingExp = Skills.getExperience(Skills.FARMING);
-			
+
 			System.out.println("Initialize...");
 
 			loader = new ScriptLoader();
@@ -109,23 +110,25 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			provide(stateStrategy = new StateStrategy(LOAD_GUI, Condition.TRUE));
 			provide(new Antiban());
 
-			INITIAL.add(new Edge(new Condition() {
+			Condition validateRequirements = new Condition() {
 				public boolean validate() {
-					System.out.println("Total work = "
-							+ Patches.countAllWork(true));
-					boolean b = false;
 					for (Requirement req : RunOtherScriptv2.requirements) {
 						if (!req.validate())
 							return false;
 					}
 					for (Location location : Location.locations) {
-						if (!location.isBank() && location.activated
-								&& location.checkRequirements())
-							b = true;
+						if (location.activated && !location.checkRequirements())
+							return false;
 					}
-					return Patches.countAllWork(true) > 0 && b;
+					return true;
 				}
-			}, ON_CHOOSE_LOCATION));
+			};
+
+			INITIAL.add(new Edge(new Condition() {
+				public boolean validate() {
+					return Patches.countAllWork(true) > 0;
+				}
+			}.and(validateRequirements), ON_CHOOSE_LOCATION));
 
 			Option<Location> chooseLocation = new Option<Location>(
 					Condition.TRUE, new OptionSelector<Location>() {
@@ -222,15 +225,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			 * items, go to bank
 			 **/
 			INITIAL.add(new Edge(scriptStartCondition.negate().or(
-					new Condition() {
-						public boolean validate() {
-							for (Requirement req : RunOtherScriptv2.requirements) {
-								if (!req.validate())
-									return true;
-							}
-							return false;
-						}
-					}), BANK_INIT_DEPOSIT));
+					validateRequirements.negate()), BANK_INIT_DEPOSIT));
 
 			banker.addSharedStates(BANK_INIT_DEPOSIT, BANK_INIT_WITHDRAW,
 					Banker.Method.DEPOSIT, Banker.Method.IDLE);
@@ -264,7 +259,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public void onRepaint(Graphics g) {
 		if (!gui.isDone())
 			return;
-		
+
 		g.fillRect(0, 510, 200, 30);
 		try {
 			float[] scales = { 1f, 1f, 1f, 0.95f };
@@ -274,93 +269,66 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			g2d.drawImage(proggy, rescale, 0, 390);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
+		}
 		g.setColor(Color.BLACK);
-		Font myfont = new Font("Arial",Font.PLAIN,14);
+		Font myfont = new Font("Arial", Font.PLAIN, 14);
 		g.setFont(myfont);
 		g.drawString(Integer.toString(Patches.countAllWork(true)), 248, 514);
 		g.drawString(timer.toElapsedString(), 360, 443);
 		if (gui.scriptsEnabled && gui.getSelectedScript() != null) {
 			String name = gui.getSelectedScript().getName();
-			g.drawString(name.substring(name.lastIndexOf(".")),206,491);
+			g.drawString(name.substring(name.lastIndexOf(".")), 206, 491);
 		} else {
-			g.drawString("---",206,491);
+			g.drawString("---", 206, 491);
 		}
-		
+
 		if (stateStrategy != null && stateStrategy.getCurrentState() != null) {
 			String name = stateStrategy.getCurrentState().name;
-			g.drawString(name,370,491);
+			g.drawString(name, 370, 491);
 		} else {
-			g.drawString("---",206,481);
+			g.drawString("---", 206, 481);
 		}
-		
+
 		int lvl = Skills.getLevel(Skills.FARMING);
 		int lvlups = lvl - initialFarmingLevel;
 		int exp = Skills.getExperience(Skills.FARMING);
 		int expups = exp - initialFarmingExp;
 		long expph = expups * 3600 * 1000 / (timer.getElapsed() + 1);
-		
-		g.drawString(lvl + " (+" + lvlups + ")", 221,464);
-		g.drawString(expups + " (" + expph + "/H)", 362,464);
-		g.drawString("Check your inv :p", 203,443);
-		/*
-		int y = 35;
-		g.setFont(new Font("Arial", Font.BOLD, 12));
-		for (Location location : Location.locations) {
-			if (!location.activated)
-				continue;
-			g.setColor(Color.YELLOW);
-			g.fillRect(5, y, 200, 15);
-			g.setColor(Color.BLACK);
-			g.drawString(location.toString()
-					+ (location.selectedTeleportOption == null ? "" : " - "
-							+ location.selectedTeleportOption), 10, y + 10);
-			y += 15;
-			for (Patch patch : Patches.patches.values()) {
-				if (!patch.activated)
-					continue;
-				if (patch.getLocation() == location) {
-					g.setColor(Color.YELLOW);
-					g.fillRect(5, y, 200, 15);
-					g.setColor(Color.RED);
-					g.fillRect(20, y + 2, 100, 11);
-					int width = (int) Math.round(patch.getProgress() * 100);
-					if (patch.isDiseased()) {
-						g.setColor(Color.GRAY);
-						g.fillRect(20, y + 2, 100, 11);
-					} else if (patch.isDead()) {
-						g.setColor(Color.BLACK);
-						g.fillRect(20, y + 2, 100, 11);
-					} else if (patch.isWatered()) {
-						g.setColor(Color.BLUE);
-						g.fillRect(20, y + 2, Math.min(100, width), 11);
-					} else if (patch.countWeeds() > 0) {
-						g.setColor(Color.GREEN);
-						g.fillRect(20, y + 2, 100, 11);
-					} else {
-						g.setColor(new Color(0, 128, 0));
-						g.fillRect(20, y + 2, Math.min(100, width), 11);
-					}
-					g.setColor(Color.BLACK);
-					g.drawString(patch.getCorrespondingPlant() == null ? "Weed"
-							: patch.getCorrespondingPlant().toString(), 130,
-							y + 10);
-					y += 15;
-				}
-			}
 
-		}
-		*/
-		/*for (Entry<String, Integer> item : ProductXYZ.notedProducts.entrySet()) {
-			 if (item.getValue() > 0) {
-				g.setColor(Color.YELLOW);
-				g.fillRect(5, y, 200, 15);
-				g.setColor(Color.BLACK);
-				g.drawString(item.getKey() + ": " + item.getValue(), 10,
-						y + 10);
-				y += 15;
-			}
-		}*/
+		g.drawString(lvl + " (+" + lvlups + ")", 221, 464);
+		g.drawString(expups + " (" + expph + "/H)", 362, 464);
+		g.drawString("Check your inv :p", 203, 443);
+		/*
+		 * int y = 35; g.setFont(new Font("Arial", Font.BOLD, 12)); for
+		 * (Location location : Location.locations) { if (!location.activated)
+		 * continue; g.setColor(Color.YELLOW); g.fillRect(5, y, 200, 15);
+		 * g.setColor(Color.BLACK); g.drawString(location.toString() +
+		 * (location.selectedTeleportOption == null ? "" : " - " +
+		 * location.selectedTeleportOption), 10, y + 10); y += 15; for (Patch
+		 * patch : Patches.patches.values()) { if (!patch.activated) continue;
+		 * if (patch.getLocation() == location) { g.setColor(Color.YELLOW);
+		 * g.fillRect(5, y, 200, 15); g.setColor(Color.RED); g.fillRect(20, y +
+		 * 2, 100, 11); int width = (int) Math.round(patch.getProgress() * 100);
+		 * if (patch.isDiseased()) { g.setColor(Color.GRAY); g.fillRect(20, y +
+		 * 2, 100, 11); } else if (patch.isDead()) { g.setColor(Color.BLACK);
+		 * g.fillRect(20, y + 2, 100, 11); } else if (patch.isWatered()) {
+		 * g.setColor(Color.BLUE); g.fillRect(20, y + 2, Math.min(100, width),
+		 * 11); } else if (patch.countWeeds() > 0) { g.setColor(Color.GREEN);
+		 * g.fillRect(20, y + 2, 100, 11); } else { g.setColor(new Color(0, 128,
+		 * 0)); g.fillRect(20, y + 2, Math.min(100, width), 11); }
+		 * g.setColor(Color.BLACK); g.drawString(patch.getCorrespondingPlant()
+		 * == null ? "Weed" : patch.getCorrespondingPlant().toString(), 130, y +
+		 * 10); y += 15; } }
+		 * 
+		 * }
+		 */
+		/*
+		 * for (Entry<String, Integer> item :
+		 * ProductXYZ.notedProducts.entrySet()) { if (item.getValue() > 0) {
+		 * g.setColor(Color.YELLOW); g.fillRect(5, y, 200, 15);
+		 * g.setColor(Color.BLACK); g.drawString(item.getKey() + ": " +
+		 * item.getValue(), 10, y + 10); y += 15; } }
+		 */
 		/** inject the alternative script's painting into ours **/
 		if (MODULE_RUN_SCRIPT.activeScript != null) {
 			for (Class<?> i : MODULE_RUN_SCRIPT.activeScript.getClass()
@@ -375,13 +343,12 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			}
 		}
 
-
 	}
-	
+
 	public void customProvide(Strategy s) {
 		provide(s);
 	}
-	
+
 	public void customRevoke(Strategy s) {
 		revoke(s);
 	}

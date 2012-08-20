@@ -140,6 +140,8 @@ public class Location {
 		if(module == null) return true;
 		Requirement[] reqs = module.getRequirements();
 		for(Requirement req : reqs) if(!req.validate()) return false;
+		reqs = selectedTeleportOption.getRequirements();
+		for(Requirement req : reqs) if(!req.validate()) return false;
 		return true;
 	}
 }

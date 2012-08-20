@@ -40,11 +40,11 @@ public class ITBarbFish {
 
 	public static void prepare() {
 
-		Item mudstaff = Inventory.getItem(6562);
+		/*Item mudstaff = Inventory.getItem(6562);
 		if (mudstaff != null)
 			mudstaff.getWidgetChild().click(true);
 
-		Magic.cast(Magic.Lunar.TeleportBarbarian.getWidgetId());
+		Magic.cast(Magic.Lunar.TeleportBarbarian.getWidgetId());*/
 
 		Path path = new Path(Arrays.asList(new Tile[] {
 				new Tile(2541, 3560, 0), new Tile(2534, 3558, 0),
