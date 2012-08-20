@@ -357,11 +357,7 @@ public class DoPatches extends Module {
 			public Integer get() {
 				return patch.selectedSeed.getId();
 			}
-		}, sceneObject, true).setFilter(new Filter<String>() {
-			public boolean accept(String s) {
-				return s.contains("Patch");
-			}
-		}));
+		}, sceneObject, true));
 		planting.add(new Animation(Condition.TRUE, 2291, plantedPre,
 				new Timeout(plantingFailed, 3000)));
 		planting.add(new Timeout(state, 3000));
