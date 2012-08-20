@@ -308,6 +308,14 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		g.drawString("Time: " + timer.toElapsedString(), 7, 33);
 
 	}
+	
+	public void customProvide(Strategy s) {
+		provide(s);
+	}
+	
+	public void customRevoke(Strategy s) {
+		revoke(s);
+	}
 
 	public class Antiban extends Strategy implements Task {
 		Timer timer = new Timer(Random.nextInt(30000, 40000));

@@ -3,6 +3,7 @@ package scripts.state.edge;
 import org.powerbot.game.api.methods.input.Mouse;
 import org.powerbot.game.api.methods.node.Menu;
 import org.powerbot.game.api.methods.tab.Inventory;
+import org.powerbot.game.api.methods.widget.Camera;
 import org.powerbot.game.api.util.Filter;
 import org.powerbot.game.api.util.Time;
 import org.powerbot.game.api.wrappers.Entity;
@@ -61,6 +62,10 @@ public class UseItemWith<T extends Locatable & Entity> extends Task {
 			item.getWidgetChild().interact("Use");
 		T sceneObject = object.get();
 		if (sceneObject != null) {
+			if(!sceneObject.isOnScreen()) {
+				Camera.setPitch(99);
+				Camera.turnTo(sceneObject);
+			}
 			while (Mouse.getLocation().distance(sceneObject.getCentralPoint()) > 1)
 				Mouse.move(sceneObject.getCentralPoint());
 			if (filter == null) {

@@ -194,11 +194,6 @@ public class Magic {
 					Time.sleep(5);
 			}
 		}
-		while (!Widgets.get(1082, 154).validate())
-			Time.sleep(5);
-		while (Widgets.get(1082, 154).validate()) {
-			Widgets.get(1082, 154).click(true);
-			Time.sleep(200);
-		}
+
 	}
 }

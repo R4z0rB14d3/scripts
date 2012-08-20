@@ -1,5 +1,7 @@
 package scripts.wrapper;
 
+import org.ox5377656c6c.livid.Constants;
+import org.ox5377656c6c.livid.doLivid;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.methods.Walking;
 import org.powerbot.game.api.methods.Widgets;
@@ -12,8 +14,6 @@ import org.powerbot.game.api.wrappers.Area;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
 
-import ox5377656c6c.livid.Constants;
-import ox5377656c6c.livid.doLivid;
 import scripts.farming.Magic;
 import scripts.farming.ScriptWrapper;
 

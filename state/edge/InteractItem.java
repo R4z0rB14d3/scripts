@@ -15,31 +15,17 @@ public class InteractItem extends Task {
 			String interaction_) {
 		super(c.and(new Condition() {
 			public boolean validate() {
-				return id_.get() != null;//Inventory.getCount(id_.get()) > 0;
+				return id_.get() != null;
 			}
 		}), s);
 		id = id_;
 		interaction = interaction_;
 	}
 
-	/*public InteractItem(Condition c, State s, final Value<Integer> id_,
-			String interaction_) {
-		super(c.and(new Condition() {
-			public boolean validate() {
-				return Inventory.getCount(id_.get()) > 0;
-			}
-		}), s);
-		id = id_;
-		interaction = interaction_;
-	}
-
-	public InteractItem(Condition c, State s, final int id_, String interaction_) {
-		this(c, s, new Constant<Integer>(id_), interaction_);
-	}*/
 
 	@Override
 	public void run() {
-		System.out.println("Interact with " + id.get());
+		System.out.println("Interact with " + id.get().getWidgetChild().getIndex());
 		Item item = id.get();
 		if (item != null)
 			item.getWidgetChild().interact(interaction);
