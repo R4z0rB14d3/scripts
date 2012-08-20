@@ -2,11 +2,18 @@ package scripts;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.powerbot.concurrent.Task;
 import org.powerbot.concurrent.strategy.Condition;
@@ -21,12 +28,10 @@ import org.powerbot.game.api.methods.node.Menu;
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.util.Filter;
 import org.powerbot.game.api.util.Time;
-import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.api.wrappers.Entity;
 import org.powerbot.game.api.wrappers.Locatable;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
-import org.powerbot.game.api.wrappers.node.SceneObject;
 import org.powerbot.game.bot.event.listener.PaintListener;
 
 @Manifest(authors = { "djabby" }, name = "PathRecorder", description = "s=start/stop,w=write,r=read,r=run", version = 1.37)
@@ -193,7 +198,27 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 
 	}
 
+	BufferedImage proggy;
+
 	public void setup() {
+		BufferedImage img;
+		try {
+			File imgPath = new File("src/scripts/images/proggy.png");
+			if (imgPath.exists()) {
+				System.out.println("File found!");
+				img = ImageIO.read(imgPath);
+				int w = img.getWidth(null);
+				int h = img.getHeight(null);
+				System.out.println("Width: " + h);
+				proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+				Graphics g = proggy.getGraphics();
+				g.drawImage(img, 0, 0, null);
+			}
+		} catch (IOException e) {
+			proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
+			e.printStackTrace();
+		}
+
 		provide(new Collect());
 		provide(new Running());
 	}
@@ -232,7 +257,20 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 
 	@Override
 	public void onRepaint(Graphics g) {
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 510, 200, 30);
 		g.fillOval(Mouse.getX() - 2, Mouse.getY() - 2, 4, 4);
+		try {
+			float[] scales = { 1f, 1f, 1f, 0.95f };
+			float[] offsets = new float[4];
+			RescaleOp rescale = new RescaleOp(scales, offsets, null);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.drawImage(proggy, rescale, 0, 390);
+			//g2d.drawImage(proggy, 6, 395, null);
+			// g2d.drawImage(proggy, rescale, 6, 395);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
 		if (state == State.NIL)
 			return;
 		for (Tile t : currentPath) {
@@ -244,6 +282,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 
 			}
 		}
+
 	}
 
 }

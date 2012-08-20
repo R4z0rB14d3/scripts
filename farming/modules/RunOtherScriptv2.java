@@ -356,6 +356,7 @@ public class RunOtherScriptv2 extends Module {
 						newStrategies.add(newStrategy);
 					}
 					main.customProvide(checkInterruptionsStrategy);
+					newStrategies.add(checkInterruptionsStrategy);
 
 				}
 			});

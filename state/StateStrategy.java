@@ -2,6 +2,7 @@ package scripts.state;
 
 import org.powerbot.concurrent.Task;
 import org.powerbot.concurrent.strategy.Strategy;
+import org.powerbot.game.api.methods.interactive.Players;
 
 public class StateStrategy extends Strategy 
 	implements Task, org.powerbot.concurrent.strategy.Condition {
@@ -51,12 +52,12 @@ public class StateStrategy extends Strategy
 		if(currentState == null) {
 			if(startCondition.validate()) {
 				currentState = initialState;
-				return true;
+				return Players.getLocal().validate();
 			} else {
 				return false;
 			}
 		} else {
-			return true;
+			return Players.getLocal().validate();
 		}
 	}
 

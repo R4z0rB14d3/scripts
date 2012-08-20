@@ -2,6 +2,8 @@ package scripts.state;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.powerbot.game.api.methods.interactive.Players;
+
 import scripts.state.edge.Edge;
 
 public class State {

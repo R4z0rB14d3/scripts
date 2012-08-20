@@ -3,9 +3,14 @@ package scripts.farming;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
 import java.io.File;
-import java.util.Map.Entry;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 import org.powerbot.concurrent.Task;
 import org.powerbot.concurrent.strategy.Strategy;
@@ -43,7 +48,11 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	Timer timer = new Timer(0);
 
 	public static GUI gui;
+	
+	int initialFarmingLevel;
+	int initialFarmingExp;
 
+	StateStrategy stateStrategy;
 	State INITIAL;
 	State CRITICAL_FAIL;
 
@@ -56,9 +65,33 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public ScriptLoader loader;
 	public Banker banker;
 	public RunOtherScriptv2 MODULE_RUN_SCRIPT;
+	
+	BufferedImage proggy;
 
 	protected void setup() {
 		try {
+			
+			BufferedImage img;
+			try {
+				File imgPath = new File("src/scripts/farming/images/proggy.png");
+				if (imgPath.exists()) {
+					System.out.println("File found!");
+					img = ImageIO.read(imgPath);
+					int w = img.getWidth(null);
+					int h = img.getHeight(null);
+					System.out.println("Width: " + h);
+					proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+					Graphics g = proggy.getGraphics();
+					g.drawImage(img, 0, 0, null);
+				}
+			} catch (IOException e) {
+				proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
+				e.printStackTrace();
+			}
+			
+			initialFarmingLevel = Skills.getLevel(Skills.FARMING);
+			initialFarmingExp = Skills.getExperience(Skills.FARMING);
+			
 			System.out.println("Initialize...");
 
 			loader = new ScriptLoader();
@@ -73,7 +106,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			banker = new Banker(this, new State("BI"), new State("BS"),
 					CRITICAL_FAIL);
 
-			provide(new StateStrategy(LOAD_GUI, Condition.TRUE));
+			provide(stateStrategy = new StateStrategy(LOAD_GUI, Condition.TRUE));
 			provide(new Antiban());
 
 			INITIAL.add(new Edge(new Condition() {
@@ -144,10 +177,10 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 						module.getSuccessState().add(
 								new Edge(Condition.TRUE, reached));
 						module.getCriticalState().add(
-								new Edge(Condition.TRUE, CRITICAL_FAIL));
+								new Edge(Condition.TRUE, INITIAL));
 					}
 					location.setModule(new DoPatches(location, reached,
-							INITIAL, CRITICAL_FAIL));
+							INITIAL, INITIAL));
 				}
 
 			}
@@ -231,7 +264,46 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public void onRepaint(Graphics g) {
 		if (!gui.isDone())
 			return;
-
+		
+		g.fillRect(0, 510, 200, 30);
+		try {
+			float[] scales = { 1f, 1f, 1f, 0.95f };
+			float[] offsets = new float[4];
+			RescaleOp rescale = new RescaleOp(scales, offsets, null);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.drawImage(proggy, rescale, 0, 390);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
+		g.setColor(Color.BLACK);
+		Font myfont = new Font("Arial",Font.PLAIN,14);
+		g.setFont(myfont);
+		g.drawString(Integer.toString(Patches.countAllWork(true)), 248, 514);
+		g.drawString(timer.toElapsedString(), 360, 443);
+		if (gui.scriptsEnabled && gui.getSelectedScript() != null) {
+			String name = gui.getSelectedScript().getName();
+			g.drawString(name.substring(name.lastIndexOf(".")),206,491);
+		} else {
+			g.drawString("---",206,491);
+		}
+		
+		if (stateStrategy != null && stateStrategy.getCurrentState() != null) {
+			String name = stateStrategy.getCurrentState().name;
+			g.drawString(name,370,491);
+		} else {
+			g.drawString("---",206,481);
+		}
+		
+		int lvl = Skills.getLevel(Skills.FARMING);
+		int lvlups = lvl - initialFarmingLevel;
+		int exp = Skills.getExperience(Skills.FARMING);
+		int expups = exp - initialFarmingExp;
+		long expph = expups * 3600 * 1000 / (timer.getElapsed() + 1);
+		
+		g.drawString(lvl + " (+" + lvlups + ")", 221,464);
+		g.drawString(expups + " (" + expph + "/H)", 362,464);
+		g.drawString("Check your inv :p", 203,443);
+		/*
 		int y = 35;
 		g.setFont(new Font("Arial", Font.BOLD, 12));
 		for (Location location : Location.locations) {
@@ -278,6 +350,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			}
 
 		}
+		*/
 		/*for (Entry<String, Integer> item : ProductXYZ.notedProducts.entrySet()) {
 			 if (item.getValue() > 0) {
 				g.setColor(Color.YELLOW);
@@ -301,11 +374,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 				}
 			}
 		}
-		g.setColor(Color.YELLOW);
-		g.fillRect(5, 5, 110, 30);
-		g.setColor(Color.BLACK);
-		g.drawString("Farming work: " + Patches.countAllWork(true), 7, 18);
-		g.drawString("Time: " + timer.toElapsedString(), 7, 33);
+
 
 	}
 	
