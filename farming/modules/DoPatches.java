@@ -6,6 +6,7 @@ import java.util.List;
 import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.interactive.NPCs;
 import org.powerbot.game.api.methods.tab.Inventory;
+import org.powerbot.game.api.util.Filter;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.interactive.NPC;
 import org.powerbot.game.api.wrappers.node.SceneObject;
@@ -37,7 +38,6 @@ import scripts.state.edge.MagicCast;
 import scripts.state.edge.Notification;
 import scripts.state.edge.Task;
 import scripts.state.edge.Timeout;
-import scripts.state.edge.UseItem;
 import scripts.state.edge.UseItemWith;
 import scripts.state.edge.Walk;
 
@@ -99,9 +99,9 @@ public class DoPatches extends Module {
 	}
 
 	public State doPatch(final Patch patch, State nextState) {
-		
+
 		final Constant<Plant> currentPlant = new Constant<Plant>(null);
-		
+
 		Value<SceneObject> sceneObject = new Value<SceneObject>() {
 			public SceneObject get() {
 				return patch.getSceneObject();
@@ -114,33 +114,39 @@ public class DoPatches extends Module {
 				return patch.isGrowing() || !patch.activated;
 			}
 		}, nextState));
-		
-		
-		
-		State processProducts = new ConsecutiveState<Product>(new Value<List<Product>>() {
-			public List<Product> get() {
-				Plant plant = currentPlant.get();
-				List<Product> products;
-				if (plant == null) {
-					System.out.println("*** PLANT NOT FOUND ***");
-					System.out.println("Patch state: " + patch.getState());
-					products = new ArrayList<Product>();
-				} else {
-					products = plant.products;
-				}
-				products.add(new Product(ProductType.GARBAGE,6055)); // weed
-				return products;
-			}
-		}, state, new StateCreator<Product>() {
-			public State getState(Product value, State nextState) {
-				State currentState = new State();
-				System.out.println(value.getId()+ "/"+ value.getType().getName() + " processed with " + value.getType().getSelectedModule().toString());
-				value.getType().getSelectedModule()
-						.addSharedStates(currentState, nextState, value, null);
-				return currentState;
-			}
-		});
-		
+
+		State processProducts = new ConsecutiveState<Product>(
+				new Value<List<Product>>() {
+					public List<Product> get() {
+						Plant plant = currentPlant.get();
+						List<Product> products;
+						if (plant == null) {
+							System.out.println("*** PLANT NOT FOUND ***");
+							System.out.println("Patch state: "
+									+ patch.getState());
+							products = new ArrayList<Product>();
+						} else {
+							products = plant.products;
+						}
+						products.add(new Product(ProductType.GARBAGE, 6055)); // weed
+						return products;
+					}
+				}, state, new StateCreator<Product>() {
+					public State getState(Product value, State nextState) {
+						State currentState = new State();
+						System.out.println(value.getId()
+								+ "/"
+								+ value.getType().getName()
+								+ " processed with "
+								+ value.getType().getSelectedModule()
+										.toString());
+						value.getType()
+								.getSelectedModule()
+								.addSharedStates(currentState, nextState,
+										value, null);
+						return currentState;
+					}
+				});
 
 		// after idling for 25 seconds, stop script
 		state.add(new Timeout(getCriticalState(), 25000));
@@ -282,7 +288,7 @@ public class DoPatches extends Module {
 		State harvestingFailed = new State("HARVF");
 		state.add(new Edge(new Condition() {
 			public boolean validate() {
-				if(patch.getProgress() >= 1.0) {
+				if (patch.getProgress() >= 1.0) {
 					currentPlant.set(patch.getCorrespondingPlant());
 					return true;
 				} else {
@@ -334,7 +340,7 @@ public class DoPatches extends Module {
 				FarmingProject.gui.saveSettings();
 			}
 		});
-		state.add(new UseItem(new Condition() {
+		state.add(new UseItemWith<SceneObject>(new Condition() {
 			public boolean validate() {
 				System.out.println("PLANT!!!!");
 				try {
@@ -347,14 +353,15 @@ public class DoPatches extends Module {
 					return false;
 				}
 			}
-		}, new State().add(
-				new InteractSceneObject(Condition.TRUE, planting, sceneObject,
-						"Use", true)).add(new Timeout(state, 2000)),
-				new Value<Integer>() {
-					public Integer get() {
-						return patch.selectedSeed.getId();
-					}
-				}));
+		}, planting, new Value<Integer>() {
+			public Integer get() {
+				return patch.selectedSeed.getId();
+			}
+		}, sceneObject, true).setFilter(new Filter<String>() {
+			public boolean accept(String s) {
+				return s.contains("patch");
+			}
+		}));
 		planting.add(new Animation(Condition.TRUE, 2291, plantedPre,
 				new Timeout(plantingFailed, 3000)));
 		planting.add(new Timeout(state, 3000));
@@ -371,11 +378,22 @@ public class DoPatches extends Module {
 
 		State watering = new State("WATER");
 		State wateringFailed = new State("WATERF");
+		
+		/*planted.add(new UseItemWith<SceneObject>(new Condition() {
+			public boolean validate() {
+				return patch.canWater() && !patch.isWatered();
+			}
+		}, watering, Constants.MagicWaterCan, sceneObject, true).setFilter(new Filter<String>() {
+			public boolean accept(String s) {
+				return s.contains("patch");
+			}
+		}));*/
+		
 		planted.add(new UseItemWith<SceneObject>(new Condition() {
 			public boolean validate() {
 				return patch.canWater() && !patch.isWatered();
 			}
-		}, watering, Constants.MagicWaterCan, sceneObject));
+		}, watering, Constants.MagicWaterCan, sceneObject, true));
 		watering.add(new Edge(new Condition() {
 			public boolean validate() {
 				return patch.isWatered();
@@ -435,8 +453,6 @@ public class DoPatches extends Module {
 		// }
 		// }
 		// });
-
-
 
 		System.out.println("*** " + patch.getLocation().toString() + "->"
 				+ patch.toString() + ":" + state.id);
