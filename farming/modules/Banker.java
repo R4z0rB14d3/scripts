@@ -45,6 +45,9 @@ public class Banker extends SharedModule<Banker.Method> {
 				do {
 					and_req = r.and_req;
 					r.and_req = null;
+					if(r.id.get() == Constants.Ectophial) {
+						System.out.println("Ectophial found!");
+					}
 					items.add(r);
 				} while ((r = and_req) != null);
 			}

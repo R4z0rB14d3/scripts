@@ -359,7 +359,7 @@ public class DoPatches extends Module {
 			}
 		}, sceneObject, true).setFilter(new Filter<String>() {
 			public boolean accept(String s) {
-				return s.contains("patch");
+				return s.contains("Patch");
 			}
 		}));
 		planting.add(new Animation(Condition.TRUE, 2291, plantedPre,
@@ -454,13 +454,13 @@ public class DoPatches extends Module {
 		// }
 		// });
 
-		System.out.println("*** " + patch.getLocation().toString() + "->"
-				+ patch.toString() + ":" + state.id);
-		System.out.println("Raking:" + raking.id + ", Curing:" + curing.id);
-		System.out.println("Clearing:" + clearing.id + ",Harvesting: "
-				+ harvesting.id);
-		System.out.println("Planting: " + planting.id + ",Composting:"
-				+ composting.id);
+//		System.out.println("*** " + patch.getLocation().toString() + "->"
+//				+ patch.toString() + ":" + state.id);
+//		System.out.println("Raking:" + raking.id + ", Curing:" + curing.id);
+//		System.out.println("Clearing:" + clearing.id + ",Harvesting: "
+//				+ harvesting.id);
+//		System.out.println("Planting: " + planting.id + ",Composting:"
+//				+ composting.id);
 
 		return state;
 	}
