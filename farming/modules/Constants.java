@@ -1,5 +1,7 @@
 package scripts.farming.modules;
 
+
+
 public class Constants {
 	public final static int NatureRune= 561; 	
 	public final static int LawRune = 563;
@@ -12,6 +14,8 @@ public class Constants {
 	public final static int TrollheimTablet = 112; 
 	public final static int ExplorersRing3 = 13562; 
 	public final static int ExplorersRing4 = 19760;
-	public static final int MagicWaterCan = 18682; 
+	public static final int MagicWaterCan = 18682;
+	public static final int FireRune = 554;
+	public static final int Feather = 314; 
 	
 }

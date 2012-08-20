@@ -13,8 +13,8 @@ public abstract class ValuedEither<T> extends Edge {
 	}
 	
 	public abstract boolean validateValue(T val);
-	public abstract State getFirstState(T val);
-	public abstract State getSecondState(T val);
+	public abstract State getFirstState(T val);// if validateValue = true
+	public abstract State getSecondState(T val); // if validtateValue = false
 	
 
 

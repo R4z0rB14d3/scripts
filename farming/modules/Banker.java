@@ -2,18 +2,16 @@ package scripts.farming.modules;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.methods.widget.Bank;
 import org.powerbot.game.api.util.Time;
-import org.powerbot.game.api.wrappers.node.Item;
 
-import scripts.farming.Patches;
 import scripts.farming.Equipment;
 import scripts.farming.FarmingProject;
 import scripts.farming.Location;
 import scripts.farming.Patch;
+import scripts.farming.Patches;
 import scripts.state.Condition;
 import scripts.state.ConsecutiveState;
 import scripts.state.Module;
@@ -28,7 +26,7 @@ import scripts.state.edge.Task;
 import scripts.state.edge.Timeout;
 import scripts.state.tools.OptionSelector;
 
-public class Banker extends SharedModule {
+public class Banker extends SharedModule<Banker.Method> {
 	// id -> amount
 	public List<Requirement> getRequirements(FarmingProject main) {
 		List<Requirement> items = new ArrayList<Requirement>();
@@ -51,6 +49,10 @@ public class Banker extends SharedModule {
 				} while ((r = and_req) != null);
 			}
 		}
+		for(Requirement req : RunOtherScriptv2.requirements) {
+			items.add(req);
+		}
+		System.out.println("Total of " + items.size() + " requirements");
 
 		return items;
 	}
@@ -97,6 +99,7 @@ public class Banker extends SharedModule {
 					}
 				}, BANKING_FINISHED_WITHDRAW, new StateCreator<Requirement>() {
 					public State getState(Requirement value, State nextState) {
+						System.out.println("Req:"+value.toString());
 						State state = new State(value.toString());
 						int i = 0;
 						do {

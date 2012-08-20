@@ -2,11 +2,14 @@ package scripts.farming.modules;
 
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.wrappers.Tile;
+import org.powerbot.game.api.wrappers.node.Item;
 
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
+import scripts.state.Value;
 import scripts.state.edge.AnimationPath;
+import scripts.state.edge.AssureLocation;
 import scripts.state.edge.Either;
 import scripts.state.edge.InteractItem;
 import scripts.state.edge.Notification;
@@ -18,7 +21,17 @@ import scripts.state.edge.WalkPath;
 public class EctovialMorytania extends Module {
 	public EctovialMorytania(State INITIAL, State SUCCESS, State CRITICAL) {
 		super("Ectovial", INITIAL, SUCCESS, CRITICAL,
-				new Requirement[] { new Requirement(1,Constants.Ectophial)});		// Integer[] refillAnimations = new Integer[] { 9609, 8939, 8941, 832 };
+				new Requirement[] { new Requirement(1, Constants.Ectophial) }); // Integer[]
+																				// refillAnimations
+																				// =
+																				// new
+																				// Integer[]
+																				// {
+																				// 9609,
+																				// 8939,
+																				// 8941,
+																				// 832
+																				// };
 		Integer[] refillAnimations = new Integer[] { 832 };
 
 		Tile[] path = new Tile[] { new Tile(3658, 3522, 0),
@@ -53,11 +66,14 @@ public class EctovialMorytania extends Module {
 		 * something went wrong > try again
 		 */
 		State FAIL = new State();
-
+		INITIAL.add(new AssureLocation(Condition.TRUE, new Tile(3661, 3522, 0),
+				4, ECTOFUNTUS_CHECK));
 		INITIAL.add(new InteractItem(Condition.TRUE, ECTOFUNTUS_REFILL,
-				Constants.Ectophial, "Empty"));
-		ECTOFUNTUS_REFILL.add(new AnimationPath(Condition.TRUE,
-				refillAnimations, ECTOFUNTUS_CHECK, new Timeout(FAIL, 10000)));
+				new Value<Item>() { public Item get() { return Inventory.getItem(Constants.Ectophial); }}, "Empty"));
+		ECTOFUNTUS_REFILL.add(
+				new AnimationPath(Condition.TRUE, refillAnimations,
+						ECTOFUNTUS_CHECK, new Timeout(FAIL, 12000))).add(
+				new Timeout(FAIL, 12000));
 
 		ECTOFUNTUS_CHECK.add(new Either(new Condition() {
 			public boolean validate() {
@@ -65,7 +81,8 @@ public class EctovialMorytania extends Module {
 			}
 		}, ECTOFUNTUS_DONE, ECTOFUNTUS_REFILL_MANUALLY));
 
-		ECTOFUNTUS_REFILL_MANUALLY.add(new UseItem(Condition.TRUE,ECTOFUNTUS_REFILL,4251,12345));
+		ECTOFUNTUS_REFILL_MANUALLY.add(new UseItem(Condition.TRUE,
+				ECTOFUNTUS_REFILL, 4251, 12345));
 
 		ECTOFUNTUS_DONE.add(new WalkPath(Condition.TRUE, path, SUCCESS,
 				new Timeout(FAIL, 10000)));

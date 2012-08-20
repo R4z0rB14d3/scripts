@@ -4,9 +4,9 @@ import scripts.farming.modules.Requirement;
 import scripts.state.edge.Edge;
 import scripts.state.edge.Task;
 
-public class SharedModule extends Module {
+public class SharedModule<T> extends Module {
 	State entered = null;
-	protected Object intermediateValue = null;
+	protected T intermediateValue = null;
 
 	public SharedModule(String description_, State initial_, State success_,
 			State critical_) {
@@ -18,7 +18,7 @@ public class SharedModule extends Module {
 		super(description_, initial_, success_, critical_, requirements_);
 	}
 
-	public <T> State addSharedStates(final State init,State succ, final T val, final T reset) {
+	public State addSharedStates(final State init,State succ, final T val, final T reset) {
 		init.add(new Task(Condition.TRUE, initial) {
 			public void run() {
 				entered = init;

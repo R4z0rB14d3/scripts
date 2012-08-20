@@ -26,6 +26,7 @@ import org.powerbot.game.bot.event.listener.PaintListener;
 
 import scripts.farming.modules.Banker;
 import scripts.farming.modules.DoPatches;
+import scripts.farming.modules.Requirement;
 import scripts.farming.modules.RunOtherScriptv2;
 import scripts.state.Condition;
 import scripts.state.Module;
@@ -80,6 +81,10 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					System.out.println("Total work = "
 							+ Patches.countAllWork(true));
 					boolean b = false;
+					for (Requirement req : RunOtherScriptv2.requirements) {
+						if (!req.validate())
+							return false;
+					}
 					for (Location location : Location.locations) {
 						if (!location.isBank() && location.activated
 								&& location.checkRequirements())
@@ -183,8 +188,16 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			 * When there is no location that we can visit with our current
 			 * items, go to bank
 			 **/
-			INITIAL.add(new Edge(scriptStartCondition.negate(),
-					BANK_INIT_DEPOSIT));
+			INITIAL.add(new Edge(scriptStartCondition.negate().or(
+					new Condition() {
+						public boolean validate() {
+							for (Requirement req : RunOtherScriptv2.requirements) {
+								if (!req.validate())
+									return true;
+							}
+							return false;
+						}
+					}), BANK_INIT_DEPOSIT));
 
 			banker.addSharedStates(BANK_INIT_DEPOSIT, BANK_INIT_WITHDRAW,
 					Banker.Method.DEPOSIT, Banker.Method.IDLE);
@@ -257,24 +270,24 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 						g.fillRect(20, y + 2, Math.min(100, width), 11);
 					}
 					g.setColor(Color.BLACK);
-					g.drawString(patch.getCorrespondingSeed() == null ? "Weed"
-							: patch.getCorrespondingSeed().toString(), 130,
+					g.drawString(patch.getCorrespondingPlant() == null ? "Weed"
+							: patch.getCorrespondingPlant().toString(), 130,
 							y + 10);
 					y += 15;
 				}
 			}
-			for (Entry<String, Integer> item : Product.notedProducts.entrySet()) {
-				/* if (item.getValue() > 0) */{
-					g.setColor(Color.YELLOW);
-					g.fillRect(5, y, 200, 15);
-					g.setColor(Color.BLACK);
-					g.drawString(item.getKey() + ": " + item.getValue(), 10,
-							y + 10);
-					y += 15;
-				}
-			}
-		}
 
+		}
+		/*for (Entry<String, Integer> item : ProductXYZ.notedProducts.entrySet()) {
+			 if (item.getValue() > 0) {
+				g.setColor(Color.YELLOW);
+				g.fillRect(5, y, 200, 15);
+				g.setColor(Color.BLACK);
+				g.drawString(item.getKey() + ": " + item.getValue(), 10,
+						y + 10);
+				y += 15;
+			}
+		}*/
 		/** inject the alternative script's painting into ours **/
 		if (MODULE_RUN_SCRIPT.activeScript != null) {
 			for (Class<?> i : MODULE_RUN_SCRIPT.activeScript.getClass()
@@ -294,14 +307,6 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		g.drawString("Farming work: " + Patches.countAllWork(true), 7, 18);
 		g.drawString("Time: " + timer.toElapsedString(), 7, 33);
 
-	}
-
-	public void customProvide(Strategy s) {
-		provide(s);
-	}
-
-	public void customRevoke(Strategy s) {
-		revoke(s);
 	}
 
 	public class Antiban extends Strategy implements Task {

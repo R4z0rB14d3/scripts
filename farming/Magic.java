@@ -163,7 +163,7 @@ public class Magic {
 			break;
 		}
 		int y = spell.getAbsoluteY();
-		if (y < 200 || y > 420) {
+		if (y < 220 || y > 400) {
 			int adjust = 310 - y;
 			Mouse.move(Widgets.get(getSpellbookWidgetID(book), 63).getChild(1)
 					.getCentralPoint());
@@ -186,17 +186,19 @@ public class Magic {
 							.getCentralPoint());
 					System.out.println(adjust);
 					Mouse.drag(Mouse.getX(), Mouse.getY() - adjust);
-					Time.sleep(1300);
 				}
 				patch.interact("Cure patch");
-				Time.sleep(1300);
+				while (patch.getTextColor() == 16711680)
+					Time.sleep(5);
+				while (!Widgets.get(1082, 4).validate())
+					Time.sleep(5);
 			}
 		}
-		if (Widgets.get(1082, 154).validate()) {
-			while (Widgets.get(1082, 154).validate()) {
-				Widgets.get(1082, 154).click(true);
-				Time.sleep(200);
-			}
+		while (!Widgets.get(1082, 154).validate())
+			Time.sleep(5);
+		while (Widgets.get(1082, 154).validate()) {
+			Widgets.get(1082, 154).click(true);
+			Time.sleep(200);
 		}
 	}
 }

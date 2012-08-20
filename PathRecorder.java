@@ -14,7 +14,10 @@ import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.Manifest;
 import org.powerbot.game.api.methods.Walking;
+import org.powerbot.game.api.methods.input.Mouse;
 import org.powerbot.game.api.methods.interactive.Players;
+import org.powerbot.game.api.methods.node.Menu;
+import org.powerbot.game.api.util.Time;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.bot.event.listener.PaintListener;
 
@@ -67,6 +70,21 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 	@Override
 	public void keyTyped(KeyEvent e) {
 		switch (e.getKeyChar()) {
+		case 'm':
+			// actually not part of the path recorder
+			//SceneObject pipe = SceneEntities.getNearest(20210);
+			Mouse.click(false);
+			Time.sleep(1000);
+			//while(!Menu.isOpen()) Time.sleep(10);
+			System.out.println("#actions=" + Menu.getActions().length);
+			System.out.println("#options=" + Menu.getOptions().length);
+			for(String action : Menu.getActions()) {
+				System.out.println(action);
+			}
+			for(String action : Menu.getOptions()) {
+				System.out.println(action);
+			}
+			break;
 		case 's':
 			switch (state) {
 			case NIL:

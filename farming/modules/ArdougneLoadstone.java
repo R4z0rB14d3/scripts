@@ -53,8 +53,6 @@ public class ArdougneLoadstone extends Module{
 				Time.sleep(700);
 			}
 		});
-//		TELEPORTING.add(new Animation(Condition.TRUE, 16385, TELEPORTED,
-				//new Timeout(INITIAL, 15000)));
 		TELEPORTING.add(new AssureLocation(Condition.TRUE,new Tile(2634,3348,0),3,TELEPORTED));
 		TELEPORTING.add(new Timeout(INITIAL,15000));
 		TELEPORTED.add(new WalkPath(Condition.TRUE,path,SUCCESS,new Timeout(INITIAL,10000)));

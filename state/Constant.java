@@ -6,4 +6,5 @@ public class Constant<T> implements Value<T> {
 		value = value_;
 	}
 	public T get() { return value; }
+	public void set(T newval) { value = newval; }
 }

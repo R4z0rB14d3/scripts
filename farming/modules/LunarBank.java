@@ -47,7 +47,7 @@ public class LunarBank extends Module {
 //		TELEPORTING.add(new Animation(Condition.TRUE, 16385, TELEPORTED,
 //				new Timeout(INITIAL, 15000)));
 		TELEPORTING.add(new AssureLocation(Condition.TRUE,new Tile(2085,3914,0),3,TELEPORTED));
-		TELEPORTING.add(new Timeout(INITIAL,8000));
+		TELEPORTING.add(new Timeout(INITIAL,12000));
 
 		TELEPORTED.add(new WalkPath(Condition.TRUE, path, SUCCESS, new Timeout(
 				INITIAL, 10000)));

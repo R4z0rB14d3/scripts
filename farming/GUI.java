@@ -374,17 +374,17 @@ public class GUI extends JFrame {
 				}
 			}
 		});
-		List<Seed> seeds = Seed.getSeeds(new Filter<Seed>() {
-			public boolean accept(Seed s) {
+		List<Plant> seeds = Plant.getSeeds(new Filter<Plant>() {
+			public boolean accept(Plant s) {
 				return s.getType() == patch.getType();
 			}
 		});
-		final JComboBox<Seed> seed = new JComboBox<Seed>(
-				new Vector<Seed>(seeds));
+		final JComboBox<Plant> seed = new JComboBox<Plant>(
+				new Vector<Plant>(seeds));
 		seed.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
-					patch.selectedSeed = (Seed) seed.getSelectedItem();
+					patch.selectedSeed = (Plant) seed.getSelectedItem();
 				}
 			}
 		});
@@ -485,7 +485,7 @@ public class GUI extends JFrame {
 				Patch patch = Patches.patches.get(id);
 				patch.activated = activated;
 				if (patch != null && seedId != 0) {
-					patch.selectedSeed = Seed.seeds.get(seedId);
+					patch.selectedSeed = Plant.seeds.get(seedId);
 				}
 				System.out.print(".");
 			}

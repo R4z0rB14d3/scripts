@@ -2,38 +2,52 @@ package scripts.farming.modules;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.concurrent.strategy.StrategyDaemon;
 import org.powerbot.game.api.ActiveScript;
+import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.interactive.Players;
+import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.bot.Bot;
 import org.powerbot.game.bot.Context;
 
-import scripts.farming.Magic;
 import scripts.farming.FarmingProject;
+import scripts.farming.Magic;
 import scripts.farming.Patch;
 import scripts.farming.Patches;
 import scripts.farming.ScriptWrapper;
 import scripts.state.Condition;
 import scripts.state.Module;
+import scripts.state.QueuedState;
 import scripts.state.State;
+import scripts.state.edge.Animation;
 import scripts.state.edge.Edge;
 import scripts.state.edge.ExceptionSafeTask;
 import scripts.state.edge.MagicCast;
 import scripts.state.edge.Option;
 import scripts.state.edge.Task;
+import scripts.state.edge.Timeout;
 import scripts.state.tools.OptionSelector;
 
 public class RunOtherScriptv2 extends Module {
 	// List<Strategy> newStrategies;
 	public Class<?> runningScript = null;
 	public ActiveScript activeScript;
+	public static List<Requirement> requirements = new ArrayList<Requirement>();
 
 	public static ActiveScript initiateScript(FarmingProject main,
 			Class<?> script) throws Exception {
+		try {
+			Method getReqs = script.getDeclaredMethod("getRequirements");
+			requirements = Arrays.asList((Requirement[]) getReqs.invoke(null));
+		} catch (NoSuchMethodException nsme) {
+			// ignore
+		}
 		ActiveScript activeScript = (ActiveScript) script.getDeclaredMethod(
 				"getInstance").invoke(null);
 		Field contextField = ActiveScript.class.getDeclaredField("context");
@@ -64,16 +78,25 @@ public class RunOtherScriptv2 extends Module {
 			final State bankFirst = new State("SCRBF");
 			final State prepared = new State("SCRPRP");
 			final State cleaningUp = new State("SCRPCU");
-			final State state = new State("SCRIPT");
+			final State state = new QueuedState("SCRIPT");
 			ScriptWrapper annotation = script
 					.getAnnotation(ScriptWrapper.class);
 			if (annotation.banking()) {
+				/**
+				 * Bank before and after the script options -> bankFirst ->
+				 * deposit -> prepared cleaningUp -> withdraw -> success (back
+				 * to FarmingProject)
+				 */
 				option.add(script, bankFirst);
 				main.banker.addSharedStates(bankFirst, prepared,
 						Banker.Method.DEPOSIT, Banker.Method.IDLE);
 				main.banker.addSharedStates(cleaningUp, success,
 						Banker.Method.WITHDRAW, Banker.Method.IDLE);
 			} else {
+				/**
+				 * No banking options -> prepared cleaningUp -> success (back to
+				 * FarmingProject)
+				 */
 				option.add(script, prepared);
 				cleaningUp.add(new Edge(Condition.TRUE, success));
 
@@ -109,30 +132,50 @@ public class RunOtherScriptv2 extends Module {
 
 					// newStrategies = new ArrayList<Strategy>();
 
-					state.add(new Edge(interrupt, interrupted));
+					/**
+					 * Cleaning up state @ interrupt -> cleanup
+					 */
+
+					state.add(new Edge(new Condition() {
+						public boolean validate() {
+							Timer timer = new Timer(0);
+							boolean valid = interrupt.validate();
+							System.out.println("Interrupt time: "
+									+ timer.getElapsed());
+							return valid;
+						}
+					}, interrupted));
 					interrupted.add(new ExceptionSafeTask(Condition.TRUE,
 							cleaningUp, critical) {
 						public void run() throws Exception {
-							// for (Strategy strategy : newStrategies) {
-							// main.customRevoke(strategy);
-							// }
 							script.getDeclaredMethod("cleanup").invoke(null);
 							activeScript = null;
 						}
 					});
-					State curingDiseased = new State();
-					State disablingRemoteFarm = new State(); // when something
+
+					/**
+					 * Curing Patches while running script state @ patch
+					 * diseased & use remote farm -> curing on error -> disable
+					 * remote farm
+					 */
+
+					State curingDiseased = new State("CD");
+					State disablingRemoteFarm = new State("DRF"); // when something
 																// went wrong
-					State interruptMovement = new State();
+					State interruptMovement = new State("IM");
 
 					state.add(new Edge(new Condition() {
 						public boolean validate() {
+							Timer timer = new Timer(0);
 							boolean valid = false;
 							for (Patch patch : Patches.patches.values()) {
 								if (patch.isDiseased())
 									valid = true;
 							}
-							return main.gui.miscSettings.useRemoteFarm && valid;
+							System.out.println("CheckDisease time: "
+									+ timer.getElapsed());
+							return FarmingProject.gui.miscSettings.useRemoteFarm
+									&& valid;
 						}
 					}, interruptMovement));
 
@@ -140,8 +183,17 @@ public class RunOtherScriptv2 extends Module {
 						public boolean validate() {
 							return !Players.getLocal().isMoving();
 						}
-					}, curingDiseased, disablingRemoteFarm,
-							Magic.Lunar.RemoteFarm));
+					}, new State("WAITANIM").add(new Animation(Condition.TRUE,
+							4823, new State("WAITINTFC").add(
+									new Edge(new Condition() {
+										public boolean validate() {
+											return Widgets.get(1082, 4)
+													.isOnScreen();
+										}
+									}, curingDiseased)).add(
+									new Timeout(disablingRemoteFarm, 5000)),
+							new Timeout(disablingRemoteFarm, 5000))),
+							disablingRemoteFarm, Magic.Lunar.RemoteFarm));
 
 					curingDiseased.add(new ExceptionSafeTask(Condition.TRUE,
 							state, state) {
@@ -182,7 +234,9 @@ public class RunOtherScriptv2 extends Module {
 						strategyState.add(new ExceptionSafeTask(Condition.TRUE,
 								state, interrupted) {
 							public void run() {
+
 								for (org.powerbot.concurrent.Task task : tasks) {
+									// main.submit(task);
 									System.out.print("<T");
 									task.run();
 									System.out.print("T>");

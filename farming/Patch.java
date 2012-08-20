@@ -28,7 +28,7 @@ public class Patch {
 		}
 	}
 
-	private int getState() {
+	public int getState() {
 		return Settings.get(setting, shift, 0xff);
 	}
 
@@ -56,7 +56,7 @@ public class Patch {
 
 	public double getProgress() {
 		int state = getState() & ((getType() == Patches.Herb) ? 0x7f : 0x3f);
-		Seed seed = getCorrespondingSeed();
+		Plant seed = getCorrespondingPlant();
 		if (seed == null)
 			return 0;
 		if (seed.getMid() - seed.getLow() == 0)
@@ -102,9 +102,9 @@ public class Patch {
 		return getType() != Patches.Herb && getType() != Patches.Tree;
 	}
 
-	public Seed getCorrespondingSeed() {
+	public Plant getCorrespondingPlant() {
 		int s = getState();
-		for (Map.Entry<Integer, Seed> seed : Seed.seeds.entrySet()) {
+		for (Map.Entry<Integer, Plant> seed : Plant.seeds.entrySet()) {
 			if (seed.getValue().getType() == getType()
 					&& seed.getValue().getLow() <= s
 					&& s <= seed.getValue().getHigh()) {
@@ -134,7 +134,7 @@ public class Patch {
 		return location;
 	}
 
-	public Seed selectedSeed = null;
+	public Plant selectedSeed = null;
 	private int id, setting, shift;
 	private int type;
 

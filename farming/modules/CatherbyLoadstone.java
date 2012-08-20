@@ -33,7 +33,7 @@ public class CatherbyLoadstone extends Module{
 				,new Tile(2812,3461,0)
 				};
 	
-		INITIAL.add(new AssureLocation(Condition.TRUE,new Tile(2831,3451,0),3,TELEPORTED));
+		INITIAL.add(new AssureLocation(Condition.TRUE,new Tile(2831,3451,0),4,TELEPORTED));
 		INITIAL.add(new MagicCast(Condition.TRUE, CASTED, INITIAL,
 				Magic.Standard.HomeTeleport));
 		INITIAL.add(new MagicCast(Condition.TRUE, CASTED, INITIAL,

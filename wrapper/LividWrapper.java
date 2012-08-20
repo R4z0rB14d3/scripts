@@ -8,6 +8,7 @@ import org.powerbot.game.api.methods.interactive.Players;
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.methods.widget.Camera;
 import org.powerbot.game.api.util.Time;
+import org.powerbot.game.api.wrappers.Area;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
 
@@ -34,6 +35,9 @@ public class LividWrapper {
 		if (mudstaff != null)
 			mudstaff.getWidgetChild().click(true);
 
+		for(Area area : Constants.FARM_AREA) {
+			if(area.contains(Players.getLocal())) return;
+		}
 		Magic.cast(Magic.Lunar.TeleportMoonClan.getWidgetId());
 		Time.sleep(4300);
 		Walking.walk(new Tile(2113,3929,0));
@@ -50,38 +54,26 @@ public class LividWrapper {
 
 	public static void cleanup() {
 		/* Destroy items so we have more space for herbs/.. */
-		Item item = Inventory.getItem(Constants.LIVID_PLANT_SINGLE);
-		if(item != null) {
+		Item item;
+		while((item = Inventory.getItem(Constants.LIVID_PLANT_SINGLE)) != null) {
 			item.getWidgetChild().interact("Destroy");
-			Time.sleep(1300);
+			while(!Widgets.get(1183,27).validate()) Time.sleep(5);
 			Widgets.get(1183,27).click(true);
-			Time.sleep(1300);
+			while(Widgets.get(1183,27).validate()) Time.sleep(5);
 		}
-		
-		item = Inventory.getItem(Constants.LIVID_PLANT_BUNDLE);
-		if(item != null) {
+		while((item = Inventory.getItem(Constants.LUNAR_LOGS)) != null) {
 			item.getWidgetChild().interact("Destroy");
-			Time.sleep(1300);
+			while(!Widgets.get(1183,27).validate()) Time.sleep(5);
 			Widgets.get(1183,27).click(true);
-			Time.sleep(1300);
-		}
-		
-		item = Inventory.getItem(Constants.LUNAR_LOGS);
-		if(item != null) {
+			while(Widgets.get(1183,27).validate()) Time.sleep(5);
+		}		
+		while((item = Inventory.getItem(Constants.LUNAR_PLANK)) != null) {
 			item.getWidgetChild().interact("Destroy");
-			Time.sleep(1300);
+			while(!Widgets.get(1183,27).validate()) Time.sleep(5);
 			Widgets.get(1183,27).click(true);
-			Time.sleep(1300);
+			while(Widgets.get(1183,27).validate()) Time.sleep(5);
 		}
-		
-		item = Inventory.getItem(Constants.LUNAR_PLANK);
-		if(item != null) {
-			item.getWidgetChild().interact("Destroy");
-			Time.sleep(1300);
-			Widgets.get(1183,27).click(true);
-			Time.sleep(1300);
-		}
-		if(Widgets.get(1081,0).isOnScreen()) {
+		while(Widgets.get(1081,0).isOnScreen()) {
 			Mouse.click(Players.getLocal().getCentralPoint(),true);
 		}
 		Camera.setPitch(89);
