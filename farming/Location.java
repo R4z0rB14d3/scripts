@@ -10,8 +10,9 @@ import org.powerbot.game.api.methods.interactive.Players;
 import org.powerbot.game.api.wrappers.Area;
 import org.powerbot.game.api.wrappers.Tile;
 
-import scripts.farming.modules.Requirement;
+import scripts.farming.modules.DoPatches;
 import scripts.farming.modules.Target;
+import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
@@ -137,11 +138,8 @@ public class Location {
 					new Tile(2822, 3671, 0))) };
 
 	public boolean checkRequirements() {
-		if(module == null) return true;
-		Requirement[] reqs = module.getRequirements();
-		for(Requirement req : reqs) if(!req.validate()) return false;
-		reqs = selectedTeleportOption.getRequirements();
-		for(Requirement req : reqs) if(!req.validate()) return false;
-		return true;
+		return module == null || (module.getRequirement().validate()
+				&& selectedTeleportOption.getRequirement().validate()
+				&& DoPatches.getSeedRequirements(this).validate());
 	}
 }

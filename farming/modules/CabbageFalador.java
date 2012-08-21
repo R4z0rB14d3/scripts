@@ -7,6 +7,8 @@ import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
 import org.powerbot.game.api.wrappers.node.SceneObject;
 
+import scripts.farming.requirements.ItemReq;
+import scripts.farming.requirements.OneOf;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
@@ -27,8 +29,9 @@ public class CabbageFalador extends Module {
 				INITIAL,
 				SUCCESS,
 				CRITICAL,
-				new Requirement[] { new Requirement(1, Constants.ExplorersRing3)
-						.or(new Requirement(1, Constants.ExplorersRing4)) });
+				new OneOf(new ItemReq(Constants.ExplorersRing3, 1)
+						, new ItemReq(Constants.ExplorersRing4, 1))
+				);
 
 		State TELEPORTED = new State();
 		State TELEPORTING = new State();

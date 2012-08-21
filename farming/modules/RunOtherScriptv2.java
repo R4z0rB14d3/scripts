@@ -12,7 +12,6 @@ import org.powerbot.concurrent.strategy.StrategyDaemon;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.interactive.Players;
-import org.powerbot.game.api.util.Time;
 import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.bot.Bot;
 import org.powerbot.game.bot.Context;
@@ -22,6 +21,8 @@ import scripts.farming.Magic;
 import scripts.farming.Patch;
 import scripts.farming.Patches;
 import scripts.farming.ScriptWrapper;
+import scripts.farming.requirements.EmptyReq;
+import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.QueuedState;
@@ -40,13 +41,13 @@ public class RunOtherScriptv2 extends Module {
 	List<Strategy> newStrategies;
 	public Class<?> runningScript = null;
 	public ActiveScript activeScript;
-	public static List<Requirement> requirements = new ArrayList<Requirement>();
+	public static Requirement<?> requirements = new EmptyReq();
 
 	public static ActiveScript initiateScript(FarmingProject main,
 			Class<?> script) throws Exception {
 		try {
 			Method getReqs = script.getDeclaredMethod("getRequirements");
-			requirements = Arrays.asList((Requirement[]) getReqs.invoke(null));
+			requirements = (Requirement<?>) getReqs.invoke(null);
 		} catch (NoSuchMethodException nsme) {
 			// ignore
 		}
@@ -213,16 +214,12 @@ public class RunOtherScriptv2 extends Module {
 						public boolean validate() {
 							return !Players.getLocal().isMoving();
 						}
-					}, new State("WAITANIM").add(new Animation(Condition.TRUE,
-							4823, new State("WAITINTFC").add(
-									new Edge(new Condition() {
-										public boolean validate() {
-											return Widgets.get(1082, 4)
-													.isOnScreen();
-										}
-									}, curingDiseased)).add(
-									new Timeout(disablingRemoteFarm, 5000)),
-							new Timeout(disablingRemoteFarm, 5000))),
+					}, new State("WAITINTFC").add(new Edge(new Condition() {
+						public boolean validate() {
+							return Widgets.get(1082, 4).isOnScreen();
+						}
+					}, curingDiseased)).add(
+							new Timeout(disablingRemoteFarm, 5000)),
 							disablingRemoteFarm, Magic.Lunar.RemoteFarm));
 
 					curingDiseased.add(new ExceptionSafeTask(Condition.TRUE,
@@ -338,15 +335,19 @@ public class RunOtherScriptv2 extends Module {
 										.getCurrentState() == checkInterruptions;
 							}
 						}.and(interrupt.negate()).and(strategy);
-						
+
 						Condition cond2 = new Condition() {
 							public boolean validate() {
 								boolean checkIS, interruptNeg, strateg;
-								//System.out.print("(" + (ru = run.validate()));
-								System.out.print("," + (checkIS = (checkInterruptionsStrategy
-										.getCurrentState() == checkInterruptions)));
-								System.out.print(","+ (interruptNeg = !interrupt.validate()));
-								System.out.print("," + (strateg = strategy.validate()));
+								// System.out.print("(" + (ru =
+								// run.validate()));
+								System.out.print(","
+										+ (checkIS = (checkInterruptionsStrategy
+												.getCurrentState() == checkInterruptions)));
+								System.out.print(","
+										+ (interruptNeg = !interrupt.validate()));
+								System.out.print(","
+										+ (strateg = strategy.validate()));
 								return checkIS && interruptNeg && strateg;
 							}
 						};

@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.itbarbfisher.iTBarbFisher;
 import org.itbarbfisher.strategies.Drop;
-import org.itbarbfisher.strategies.Fish;
-import org.itbarbfisher.strategies.Walker;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.methods.Walking;
 import org.powerbot.game.api.methods.interactive.Players;
@@ -19,7 +17,9 @@ import org.powerbot.game.api.wrappers.node.Item;
 import scripts.farming.Magic;
 import scripts.farming.ScriptWrapper;
 import scripts.farming.modules.Constants;
-import scripts.farming.modules.Requirement;
+import scripts.farming.requirements.Both;
+import scripts.farming.requirements.ItemReq;
+import scripts.farming.requirements.Requirement;
 
 @ScriptWrapper(banking = false)
 public class ITBarbFish {
@@ -33,9 +33,9 @@ public class ITBarbFish {
 		return instance;
 	}
 
-	public static Requirement[] getRequirements() {
-		return new Requirement[] { new Requirement(0, Constants.FireRune),
-				new Requirement(0, Constants.Feather) };
+	public static Requirement<?> getRequirements() {
+		return new Both(new ItemReq(Constants.FireRune, 0)
+		, new ItemReq(Constants.Feather, 0));
 	}
 
 	public static void prepare() {

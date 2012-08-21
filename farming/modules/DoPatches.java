@@ -16,11 +16,17 @@ import scripts.farming.FarmingProject;
 import scripts.farming.Location;
 import scripts.farming.Magic;
 import scripts.farming.Patch;
+import scripts.farming.Patches;
 import scripts.farming.Plant;
 import scripts.farming.Product;
 import scripts.farming.ProductType;
 import scripts.farming.modules.processing.Interact;
 import scripts.farming.modules.processing.LeprechaunNote;
+import scripts.farming.requirements.Both;
+import scripts.farming.requirements.EmptyReq;
+import scripts.farming.requirements.ItemReq;
+import scripts.farming.requirements.Optional;
+import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
 import scripts.state.ConsecutiveState;
 import scripts.state.Constant;
@@ -63,31 +69,27 @@ public class DoPatches extends Module {
 		return false;
 	}
 
-	public static Requirement getSeedRequirements(Location loc) {
+	public static Requirement<?> getSeedRequirements(Location loc) {
 		System.out.println("Seed requirements for " + loc + "?");
-		Requirement req = new Requirement(0, 0); // neutral element
+		Requirement<?> req = new EmptyReq(); // neutral element
 		for (final Patch patch : loc.getPatches()) {
-			req = req.and(patch.getRequirement());
+			req = new Both(req, patch.getRequirement());
 		}
 		System.out.println("Seed requirements for " + loc + ":" + req);
 		return req;
 	}
 
 	public DoPatches(Location loc, State initial, State success, State critical) {
-		super("Do Patches", initial, success, critical, new Requirement[] {
-				DoPatches.getSeedRequirements(loc),
-				new Requirement(5, Constants.PlantCure, true),
-				new Requirement(0, Constants.AstralRune, true),
-				new Requirement(0, Constants.NatureRune, true),
-				new Requirement(1,
+		super("Do Patches", initial, success, critical, new Both(new Optional(
+				new ItemReq(Constants.PlantCure, 5)), new Both(new Optional(
+				new ItemReq(Constants.AstralRune, 0)), new Both(new Optional(
+				new ItemReq(Constants.NatureRune, 0)), new Both(new Optional(
+				new ItemReq(Constants.MudBattleStaff, 1)), new Both(
+				new Optional(new ItemReq(
 						locationNeedsWater(loc) ? Constants.MagicWaterCan : 0,
-						true),
-				new Requirement(1,
+						1)), new Optional(new ItemReq(
 						locationNeedsSecateurs(loc) ? Constants.MagicSecateurs
-								: 0, true),
-				new Requirement(1, Constants.MudBattleStaff, true)
-						.or(new Requirement(1, Constants.MysticMudBattleStaff,
-								true)) });
+								: 0, 1))))))));
 
 		initial.add(new Edge(Condition.TRUE, new ConsecutiveState<Patch>(loc
 				.getPatches(), success, new StateCreator<Patch>() {
@@ -105,6 +107,35 @@ public class DoPatches extends Module {
 		Value<SceneObject> sceneObject = new Value<SceneObject>() {
 			public SceneObject get() {
 				return patch.getSceneObject();
+			}
+		};
+
+		final Value<String> patchName = new Value<String>() {
+			public String get() {
+				if (patch.selectedPlant == null)
+					return "";
+				if (patch.isDead())
+					return patch.selectedPlant.getDeadName();
+				else if (patch.isDiseased())
+					return patch.selectedPlant.getDiseasedName();
+				else if (patch.getProgress() >= 1.0)
+					return patch.selectedPlant.getGrownName();
+				else
+					return patch.selectedPlant.getSeededName();
+			}
+		};
+
+		Value<String> emptyPatchName = new Value<String>() {
+			public String get() {
+				switch (patch.getType()) {
+				case Patches.Flower:
+					return "Flower Patch";
+				case Patches.Herb:
+					return "Herb Patch";
+				case Patches.Allotment:
+					return "Allotment";
+				}
+				return "";
 			}
 		};
 
@@ -179,7 +210,7 @@ public class DoPatches extends Module {
 			public boolean validate() {
 				return patch.isDiseased();
 			}
-		}, curing, Constants.PlantCure, sceneObject));
+		}, curing, Constants.PlantCure, sceneObject).setOption(patchName));
 		Value<NPC> leprechaun = new Value<NPC>() {
 			public NPC get() {
 				return NPCs.getNearest(7569, 3021, 5808, 7557, 4965);
@@ -343,21 +374,16 @@ public class DoPatches extends Module {
 		state.add(new UseItemWith<SceneObject>(new Condition() {
 			public boolean validate() {
 				System.out.println("PLANT!!!!");
-				try {
-					System.out.println("Seed = " + patch.selectedSeed.getId());
-					System.out.println("Empty = " + patch.isEmpty());
-					System.out.println("Weeds = " + patch.countWeeds());
-					return patch.isEmpty() && patch.countWeeds() == 0;
-				} catch (Exception e) {
-					e.printStackTrace();
-					return false;
-				}
+				System.out.println("Seed = " + patch.selectedPlant.getId());
+				System.out.println("Empty = " + patch.isEmpty());
+				System.out.println("Weeds = " + patch.countWeeds());
+				return patch.isEmpty() && patch.countWeeds() == 0;
 			}
 		}, planting, new Value<Integer>() {
 			public Integer get() {
-				return patch.selectedSeed.getId();
+				return patch.selectedPlant.getId();
 			}
-		}, sceneObject, true));
+		}, sceneObject).setOption(emptyPatchName));
 		planting.add(new Animation(Condition.TRUE, 2291, plantedPre,
 				new Timeout(plantingFailed, 3000)));
 		planting.add(new Timeout(state, 3000));
@@ -374,22 +400,20 @@ public class DoPatches extends Module {
 
 		State watering = new State("WATER");
 		State wateringFailed = new State("WATERF");
-		
-		/*planted.add(new UseItemWith<SceneObject>(new Condition() {
-			public boolean validate() {
-				return patch.canWater() && !patch.isWatered();
-			}
-		}, watering, Constants.MagicWaterCan, sceneObject, true).setFilter(new Filter<String>() {
-			public boolean accept(String s) {
-				return s.contains("patch");
-			}
-		}));*/
-		
+
+		/*
+		 * planted.add(new UseItemWith<SceneObject>(new Condition() { public
+		 * boolean validate() { return patch.canWater() && !patch.isWatered(); }
+		 * }, watering, Constants.MagicWaterCan, sceneObject,
+		 * true).setFilter(new Filter<String>() { public boolean accept(String
+		 * s) { return s.contains("patch"); } }));
+		 */
+
 		planted.add(new UseItemWith<SceneObject>(new Condition() {
 			public boolean validate() {
 				return patch.canWater() && !patch.isWatered();
 			}
-		}, watering, Constants.MagicWaterCan, sceneObject, true));
+		}, watering, Constants.MagicWaterCan, sceneObject).setOption(patchName));
 		watering.add(new Edge(new Condition() {
 			public boolean validate() {
 				return patch.isWatered();
@@ -411,7 +435,7 @@ public class DoPatches extends Module {
 			public boolean validate() {
 				return !patch.compost;
 			}
-		}, composting, 6034, sceneObject));
+		}, composting, 6034, sceneObject).setOption(patchName));
 		planted.add(new UseItemWith<SceneObject>(new Condition() {
 			public boolean validate() {
 				return !patch.compost;
@@ -437,7 +461,11 @@ public class DoPatches extends Module {
 		compostingFailed.add(new Notification(Condition.TRUE, state,
 				"Composting failed"));
 		compostCasted.add(new InteractSceneObject(Condition.TRUE, composting,
-				sceneObject, "Cast", true));
+				sceneObject, "Cast", true).setOption(new Value<String>() {
+			public String get() {
+				return "Fertile Soil -> " + patchName.get();
+			}
+		}));
 
 		// processProducts.add(new Task(Condition.TRUE, state) {
 		// public void run() {
@@ -450,13 +478,13 @@ public class DoPatches extends Module {
 		// }
 		// });
 
-//		System.out.println("*** " + patch.getLocation().toString() + "->"
-//				+ patch.toString() + ":" + state.id);
-//		System.out.println("Raking:" + raking.id + ", Curing:" + curing.id);
-//		System.out.println("Clearing:" + clearing.id + ",Harvesting: "
-//				+ harvesting.id);
-//		System.out.println("Planting: " + planting.id + ",Composting:"
-//				+ composting.id);
+		// System.out.println("*** " + patch.getLocation().toString() + "->"
+		// + patch.toString() + ":" + state.id);
+		// System.out.println("Raking:" + raking.id + ", Curing:" + curing.id);
+		// System.out.println("Clearing:" + clearing.id + ",Harvesting: "
+		// + harvesting.id);
+		// System.out.println("Planting: " + planting.id + ",Composting:"
+		// + composting.id);
 
 		return state;
 	}

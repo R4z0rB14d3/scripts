@@ -4,6 +4,7 @@ import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
 
+import scripts.farming.requirements.ItemReq;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
@@ -21,7 +22,7 @@ import scripts.state.edge.WalkPath;
 public class EctovialMorytania extends Module {
 	public EctovialMorytania(State INITIAL, State SUCCESS, State CRITICAL) {
 		super("Ectovial", INITIAL, SUCCESS, CRITICAL,
-				new Requirement[] { new Requirement(1, Constants.Ectophial) }); // Integer[]
+				new ItemReq(Constants.Ectophial, 1)); // Integer[]
 																				// refillAnimations
 																				// =
 																				// new

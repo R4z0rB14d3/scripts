@@ -51,6 +51,16 @@ public class LeprechaunNote extends SharedModule<Product> {
 				return NPCs.getNearest(7569, 3021, 5808, 7557, 4965);
 			}
 		};
+		final Value<String> leprechaunName = new Value<String>() {
+			public String get() {
+				NPC lepr = leprechaun.get();
+				if(lepr != null) {
+					return lepr.getName();
+				} else {
+					return "";
+				}
+			}
+		};
 		final Value<Item> item = new Value<Item>() {
 			public Item get() {
 				return Inventory.getItem(itemID.get());
@@ -87,11 +97,7 @@ public class LeprechaunNote extends SharedModule<Product> {
 		}, FOUND_LEPRECHAUN, getCriticalState()));
 
 		
-		FOUND_LEPRECHAUN.add(new UseItemWith<NPC>(Condition.TRUE, COUNTING_ITEMS,itemID,leprechaun).setFilter(new Filter<String>() {
-			public boolean accept(String s) {
-				return s.contains("-> Tool");
-			}
-		}));
+		FOUND_LEPRECHAUN.add(new UseItemWith<NPC>(Condition.TRUE, COUNTING_ITEMS,itemID,leprechaun).setOption(leprechaunName));
 		/*FOUND_LEPRECHAUN.add(new UseItem(Condition.TRUE, USING_ITEM, itemID));
 		USING_ITEM.add(new InteractNPC(Condition.TRUE, USED_ITEM, leprechaun,
 				"Use", true));

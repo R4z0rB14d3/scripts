@@ -15,6 +15,8 @@ public class InteractSceneObject extends Task {
 	Value<SceneObject> object;
 	String interaction;
 
+	Value<String> option = null;
+
 	public InteractSceneObject(Condition c, State s,
 			final Value<SceneObject> object_, String interaction_) {
 		this(c, s, object_, interaction_, false);
@@ -35,21 +37,27 @@ public class InteractSceneObject extends Task {
 		}));
 	}
 
+	// e.g. to filter certain Item -> Object strings
+	public InteractSceneObject setOption(Value<String> option_) {
+		option = option_;
+		return this;
+	}
+
 	@Override
 	public void run() {
-		System.out.println("Interact scene object : " + object.get().getId() + "/" + interaction + "/" + object.get().isOnScreen());
-		Mouse.move(object.get().getCentralPoint());
-		Time.sleep(100);
-		Mouse.click(false);
-		Time.sleep(100);
-		if(!Menu.isOpen()) {
-			Time.sleep(100);
-			Mouse.click(false);
-			Time.sleep(300);
+		System.out.println("Interact scene object : " + object.get().getId()
+				+ "/" + interaction + "/" + object.get().isOnScreen());
+		SceneObject obj = object.get();
+		if (obj == null)
+			return;
+		if (!obj.isOnScreen()) {
+			Camera.setPitch(99);
+			Camera.turnTo(obj);
 		}
-		if(!Menu.select(interaction)) {
-			Time.sleep(300);
-			object.get().getModel().interact(interaction);	
+		if (option == null) {
+			obj.interact(interaction);
+		} else {
+			obj.interact(interaction, option.get());
 		}
 	}
 }

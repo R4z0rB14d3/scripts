@@ -1,7 +1,11 @@
 package scripts.farming.modules;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.methods.widget.Bank;
@@ -12,6 +16,8 @@ import scripts.farming.FarmingProject;
 import scripts.farming.Location;
 import scripts.farming.Patch;
 import scripts.farming.Patches;
+import scripts.farming.requirements.DefaultHandler;
+import scripts.farming.requirements.ItemReq;
 import scripts.state.Condition;
 import scripts.state.ConsecutiveState;
 import scripts.state.Module;
@@ -20,43 +26,25 @@ import scripts.state.State;
 import scripts.state.StateCreator;
 import scripts.state.Value;
 import scripts.state.edge.Edge;
-import scripts.state.edge.Notification;
 import scripts.state.edge.Option;
 import scripts.state.edge.Task;
 import scripts.state.edge.Timeout;
 import scripts.state.tools.OptionSelector;
 
 public class Banker extends SharedModule<Banker.Method> {
-	// id -> amount
-	public List<Requirement> getRequirements(FarmingProject main) {
-		List<Requirement> items = new ArrayList<Requirement>();
-		List<Module> modules = new ArrayList<Module>();
-		modules.add(main.MODULE_RUN_SCRIPT);
-		modules.add(this);
-		for (Location location : Location.locations) {
-			if (location.activated) {
-				modules.add(location.getModule());
-				modules.add(location.selectedTeleportOption);
-			}
-		}
-		for (Module m : modules) {
-			for (Requirement r : m.getRequirements()) {
-				Requirement and_req;
-				do {
-					and_req = r.and_req;
-					r.and_req = null;
-					if(r.id.get() == Constants.Ectophial) {
-						System.out.println("Ectophial found!");
-					}
-					items.add(r);
-				} while ((r = and_req) != null);
-			}
-		}
-		for(Requirement req : RunOtherScriptv2.requirements) {
-			items.add(req);
-		}
-		System.out.println("Total of " + items.size() + " requirements");
 
+	// id -> amount
+	public Map<Integer, Integer> getRequirements() {
+		Map<Integer, Integer> items = new HashMap<Integer, Integer>();
+		DefaultHandler.setItemMap(items);
+		for (Location loc : Location.locations) {
+			if (loc.activated) {
+				DoPatches.getSeedRequirements(loc).handle();
+				loc.getModule().getRequirement().handle();
+				loc.selectedTeleportOption.getRequirement().handle();
+			}
+		}
+		RunOtherScriptv2.requirements.handle();
 		return items;
 	}
 
@@ -95,51 +83,37 @@ public class Banker extends SharedModule<Banker.Method> {
 		State BANK_OPEN = new State("BANKO");
 		State DEPOSIT = new State("BANKD");
 
-		State WITHDRAW = new ConsecutiveState<Requirement>(
-				new Value<List<Requirement>>() {
-					public List<Requirement> get() {
-						return getRequirements(main);
+		State WITHDRAW = new ConsecutiveState<Entry<Integer, Integer>>(
+				new Value<Set<Entry<Integer, Integer>>>() {
+					public Set<Entry<Integer, Integer>> get() {
+						return getRequirements().entrySet();
 					}
-				}, BANKING_FINISHED_WITHDRAW, new StateCreator<Requirement>() {
-					public State getState(Requirement value, State nextState) {
-						System.out.println("Req:"+value.toString());
-						State state = new State(value.toString());
-						int i = 0;
-						do {
-							final Integer id = value.id.get();
-							final Integer amount = value.amount;
-							if (id > 0) {
-								i++;
-								final Requirement or_req = value.or_req;
-								final Requirement val = value;
-								state.add(new Edge(new Condition() {
-									public boolean validate() {
-										return Inventory.getCount(id) > (amount == 0 ? 0
-												: amount - 1)
-												|| (or_req == null && Bank
-														.getItem(id) == null);
-									}
-								}, nextState));
-								state.add(new Task(new Condition() {
-									public boolean validate() {
-										return Bank.getItem(id) != null;
-									}
-								}, state) {
-									public void run() {
-										Bank.withdraw(id, amount);
-										Time.sleep(300);
-									}
-								});
-								state.add(new Notification(new Condition() {
-									public boolean validate() {
-										return !val.optional && or_req == null;
-									}
-								}, critical, "Having #" + id + " is mandatory"));
-							}
-						} while ((value = value.or_req) != null);
-
-						if (i == 0)
+				}, BANKING_FINISHED_WITHDRAW,
+				new StateCreator<Entry<Integer, Integer>>() {
+					public State getState(Entry<Integer, Integer> value,
+							State nextState) {
+						State state = new State(value.getKey().toString());
+						final Integer id = value.getKey();
+						final Integer amount = value.getValue();
+						if (id > 0) {
+							state.add(new Edge(new Condition() {
+								public boolean validate() {
+									return Bank.getItem(id) == null;
+								}
+							}, nextState));
+							state.add(new Task(Condition.TRUE, state) {
+								public void run() {
+									Bank.withdraw(id, amount);
+									Time.sleep(300);
+								}
+							});							state.add(new Edge(new Condition() {
+								public boolean validate() {
+									return new ItemReq(id, amount).validate();
+								}
+							}, nextState));
+						} else {
 							state.add(new Edge(Condition.TRUE, nextState));
+						}
 						return state;
 					}
 				});

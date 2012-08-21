@@ -31,20 +31,9 @@ public class StateStrategy extends Strategy
 	
 	public void run() {
 		if(currentState == null) return;
-		lock = true;
 		currentState = currentState.run();
-		lock = false;
 	}
-	
-	boolean lock = false;
 
-	public Condition getLock() {
-		return new Condition() {
-			public boolean validate() {
-				return !lock;
-			}
-		};
-	}
 	
 	public State getCurrentState() { return currentState; }
 	

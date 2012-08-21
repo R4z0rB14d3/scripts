@@ -7,7 +7,8 @@ import org.powerbot.game.api.methods.node.SceneEntities;
 import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.api.wrappers.node.SceneObject;
 
-import scripts.farming.modules.Requirement;
+import scripts.farming.requirements.ItemReq;
+import scripts.farming.requirements.Requirement;
 import scripts.state.Value;
 
 public class Patch {
@@ -126,6 +127,10 @@ public class Patch {
 	public String toString() {
 		return Patches.getTypeName(getType());
 	}
+	
+	//public String getName() {
+		
+	//}
 
 	public boolean compost = false;
 	Location location;
@@ -134,7 +139,7 @@ public class Patch {
 		return location;
 	}
 
-	public Plant selectedSeed = null;
+	public Plant selectedPlant = null;
 	private int id, setting, shift;
 	private int type;
 
@@ -156,12 +161,12 @@ public class Patch {
 		this.type = type;
 	}
 
-	public Requirement getRequirement() {
-		return new Requirement(0, new Value<Integer>() {
+	public ItemReq getRequirement() {
+		return new ItemReq(new Value<Integer>() {
 			public Integer get() {
-				return (activated && selectedSeed != null) ? selectedSeed
+				return (activated && selectedPlant != null) ? selectedPlant
 						.getId() : 0;
 			}
-		});
+		},0);
 	}
 }

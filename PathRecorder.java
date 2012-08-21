@@ -3,6 +3,7 @@ package scripts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -16,15 +17,14 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import org.powerbot.concurrent.Task;
-import org.powerbot.concurrent.strategy.Condition;
 import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.Manifest;
 import org.powerbot.game.api.methods.Walking;
 import org.powerbot.game.api.methods.input.Mouse;
-import org.powerbot.game.api.methods.interactive.NPCs;
 import org.powerbot.game.api.methods.interactive.Players;
 import org.powerbot.game.api.methods.node.Menu;
+import org.powerbot.game.api.methods.node.SceneEntities;
 import org.powerbot.game.api.methods.tab.Inventory;
 import org.powerbot.game.api.util.Filter;
 import org.powerbot.game.api.util.Time;
@@ -32,7 +32,10 @@ import org.powerbot.game.api.wrappers.Entity;
 import org.powerbot.game.api.wrappers.Locatable;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.node.Item;
+import org.powerbot.game.api.wrappers.node.SceneObject;
 import org.powerbot.game.bot.event.listener.PaintListener;
+
+import scripts.farming.EntityWrapper;
 
 @Manifest(authors = { "djabby" }, name = "PathRecorder", description = "s=start/stop,w=write,r=read,r=run", version = 1.37)
 public class PathRecorder extends ActiveScript implements KeyListener,
@@ -81,13 +84,18 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 	}
 
 	public <T extends Entity & Locatable> boolean safeInteract(T obj,
-			String interaction, Filter<String> filter) {
+			final String interaction, Filter<String> filter) {
 		if (obj != null && obj.isOnScreen()) {
 			// move mouse to the object to get all options
+			
+			//Mouse.move(obj.getNextViewportPoint());
 			Mouse.move(obj.getCentralPoint());
-			for (String option : Menu.getOptions()) {
-				if (filter.accept(option)) {
-					return obj.interact(interaction, option);
+			String[] actions = Menu.getActions();
+			String[] options = Menu.getOptions();
+			int size = actions.length;
+			for (int i=0;i<size;i++) {
+				if (actions[i].equals(interaction) && filter.accept(options[i])) {
+					return obj.interact(interaction, options[i]);
 				}
 			}
 		}
@@ -100,6 +108,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 			// select only if item isn't selected yet
 			if (item.getWidgetChild().getBorderThickness() < 2)
 				item.getWidgetChild().interact("Use");
+			System.out.println("And now try to use::");
 			return safeInteract(obj, "Use", filter);
 		} else {
 			return false;
@@ -107,24 +116,34 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 	}
 
 	class Constants {
-		public static final int LANTADYME = 557;
+		public static final int LANTADYME = 7218;
 		public static final int LEPRECHAUN = 7557;
 	}
 
 	public void examples() {
+		Inventory.getItem(5096).getWidgetChild().interact("Use");
+		//SceneEntities.getNearest(7847).interact("Use","Marigold seed -> Flower Patch");
+		SceneObject patch = SceneEntities.getNearest(7847);
+		EntityWrapper vew = new EntityWrapper(patch);
+		Mouse.apply(vew,new Filter<Point>() {
+			public boolean accept(Point p) {
+				return Menu.select("Use","Marigold seed -> Flower Patch");
+			}
+		});
+		
 		/** Example 1: Let the leprechaun note our lantadyme **/
-		if (safeUseWith(Inventory.getItem(Constants.LANTADYME),
-				NPCs.getNearest(Constants.LEPRECHAUN), new Filter<String>() {
+		/*if (safeUseWith(Inventory.getItemAt(0),
+				SceneEntities.getNearest(7848), new Filter<String>() {
 					public boolean accept(String option) {
-						return option.contains("-> Tool");
+						return option.toLowerCase().contains("-> marigold");
 					}
 				})) {
 			System.out.println("Lantadyme successfully noted");
 		} else {
 			System.out.println("Something went oh-so wrong :(");
-		}
-
-		/** Example 2: Talk with the leprechaun, NOT with the gardener **/
+		}*/
+/*
+		/// Example 2: Talk with the leprechaun, NOT with the gardener 
 		if (safeInteract(NPCs.getNearest(Constants.LEPRECHAUN), "Talk-to",
 				new Filter<String>() {
 					public boolean accept(String option) {
@@ -134,7 +153,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 			System.out.println("Talking with leprechaun...");
 		} else {
 			System.out.println("F*ck this gardener!");
-		}
+		}*/
 	}
 
 	@Override
@@ -221,9 +240,24 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 
 		provide(new Collect());
 		provide(new Running());
+		provide(new Example());
+	}
+	
+	public class Example extends Strategy implements Task {
+		public void run() {
+			try {
+			examples();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public boolean validate() {
+			return true;
+		}
 	}
 
-	public class Collect extends Strategy implements Task, Condition {
+	public class Collect extends Strategy implements Task {
 		public void run() {
 			if (currentPath.size() == 0) {
 				getLatest = Players.getLocal().getLocation();
@@ -240,7 +274,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 		}
 	}
 
-	public class Running extends Strategy implements Task, Condition {
+	public class Running extends Strategy implements Task {
 		public void run() {
 			path.run();
 		}
@@ -259,7 +293,9 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 	public void onRepaint(Graphics g) {
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 510, 200, 30);
-		g.fillOval(Mouse.getX() - 2, Mouse.getY() - 2, 4, 4);
+		Point p = Mouse.getLocation();
+		g.drawLine(0, (int)p.getY(), 640, (int)p.getY());
+		g.drawLine((int)p.getX(), 0,(int) p.getX(), 480);
 		try {
 			float[] scales = { 1f, 1f, 1f, 0.95f };
 			float[] offsets = new float[4];

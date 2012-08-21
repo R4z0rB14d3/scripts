@@ -31,8 +31,8 @@ import org.powerbot.game.bot.event.listener.PaintListener;
 
 import scripts.farming.modules.Banker;
 import scripts.farming.modules.DoPatches;
-import scripts.farming.modules.Requirement;
 import scripts.farming.modules.RunOtherScriptv2;
+import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
@@ -70,7 +70,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 
 	protected void setup() {
 		try {
-
+			
 			BufferedImage img;
 			try {
 				File imgPath = new File("src/scripts/farming/images/proggy.png");
@@ -80,19 +80,18 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					int w = img.getWidth(null);
 					int h = img.getHeight(null);
 					System.out.println("Width: " + h);
-					proggy = new BufferedImage(w, h,
-							BufferedImage.TYPE_INT_ARGB);
+					proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
 					Graphics g = proggy.getGraphics();
 					g.drawImage(img, 0, 0, null);
 				}
 			} catch (IOException e) {
-				proggy = new BufferedImage(0, 0, BufferedImage.TYPE_INT_RGB);
+				proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
 				e.printStackTrace();
 			}
-
+			
 			initialFarmingLevel = Skills.getLevel(Skills.FARMING);
 			initialFarmingExp = Skills.getExperience(Skills.FARMING);
-
+			
 			System.out.println("Initialize...");
 
 			loader = new ScriptLoader();
@@ -109,15 +108,13 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 
 			provide(stateStrategy = new StateStrategy(LOAD_GUI, Condition.TRUE));
 			provide(new Antiban());
-
+			
 			Condition validateRequirements = new Condition() {
 				public boolean validate() {
-					for (Requirement req : RunOtherScriptv2.requirements) {
-						if (!req.validate())
-							return false;
-					}
+					if(!RunOtherScriptv2.requirements.validate()) return false;
 					for (Location location : Location.locations) {
-						if (location.activated && !location.checkRequirements())
+						if (location.activated
+								&& !location.checkRequirements())
 							return false;
 					}
 					return true;
@@ -126,9 +123,18 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 
 			INITIAL.add(new Edge(new Condition() {
 				public boolean validate() {
-					return Patches.countAllWork(true) > 0;
+					System.out.println("Total work = "
+							+ Patches.countAllWork(true));
+					boolean b = false;
+					if(!RunOtherScriptv2.requirements.validate()) return false;
+					for (Location location : Location.locations) {
+						if (!location.isBank() && location.activated
+								&& location.checkRequirements())
+							b = true;
+					}
+					return Patches.countAllWork(true) > 0 && b;
 				}
-			}.and(validateRequirements), ON_CHOOSE_LOCATION));
+			}, ON_CHOOSE_LOCATION));
 
 			Option<Location> chooseLocation = new Option<Location>(
 					Condition.TRUE, new OptionSelector<Location>() {
@@ -153,13 +159,18 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 									loc = location;
 								}
 							}
-							System.out.println("Let's go to " + loc.name);
+							if(loc != null && !loc.checkRequirements()) {
+								System.out.println("Deactivate " + loc);
+								System.out.println("Requirements not fulfilled");
+								loc.activated = false;
+							}
 							return loc;
+
 						}
 					});
 			System.out.println("Setup locations...");
 			ON_CHOOSE_LOCATION.add(chooseLocation);
-			ON_CHOOSE_LOCATION.add(new Timeout(INITIAL, 2000));
+			ON_CHOOSE_LOCATION.add(new Timeout(INITIAL, 15000));
 			// add all locations to the options
 			for (final Location location : Location.locations) {
 				if (!location.isBank()) {
@@ -225,7 +236,12 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			 * items, go to bank
 			 **/
 			INITIAL.add(new Edge(scriptStartCondition.negate().or(
-					validateRequirements.negate()), BANK_INIT_DEPOSIT));
+					new Condition() {
+						public boolean validate() {
+							if(!RunOtherScriptv2.requirements.validate()) return true;
+							return false;
+						}
+					}), BANK_INIT_DEPOSIT));
 
 			banker.addSharedStates(BANK_INIT_DEPOSIT, BANK_INIT_WITHDRAW,
 					Banker.Method.DEPOSIT, Banker.Method.IDLE);
@@ -237,6 +253,9 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			MODULE_RUN_SCRIPT = new RunOtherScriptv2(this, INITIAL, INITIAL,
 					CRITICAL_FAIL, new OptionSelector<Class<?>>() {
 						public Class<?> select() {
+							System.out.println("Selected script?");
+							if(gui.getSelectedScript() != null)
+								System.out.println("Selected script: "+ gui.getSelectedScript().getName());
 							return gui.getSelectedScript();
 						}
 					}, scriptStartCondition, new Condition() {
@@ -259,7 +278,12 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public void onRepaint(Graphics g) {
 		if (!gui.isDone())
 			return;
-
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 510, 200, 30);
+		Point p = Mouse.getLocation();
+		g.drawLine(0, (int)p.getY(), 640, (int)p.getY());
+		g.drawLine((int)p.getX(), 0,(int) p.getX(), 480);
+		
 		g.fillRect(0, 510, 200, 30);
 		try {
 			float[] scales = { 1f, 1f, 1f, 0.95f };

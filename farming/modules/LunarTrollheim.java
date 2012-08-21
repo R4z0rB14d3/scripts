@@ -2,14 +2,14 @@ package scripts.farming.modules;
 
 import org.powerbot.game.api.wrappers.Tile;
 
-import scripts.farming.Equipment;
 import scripts.farming.Magic;
+import scripts.farming.requirements.Both;
+import scripts.farming.requirements.ItemReq;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
 import scripts.state.edge.Animation;
 import scripts.state.edge.AssureLocation;
-import scripts.state.edge.Equip;
 import scripts.state.edge.MagicCast;
 import scripts.state.edge.Timeout;
 import scripts.state.edge.WalkPath;
@@ -19,12 +19,9 @@ public class LunarTrollheim extends Module {
 
 	public LunarTrollheim(State INITIAL, State SUCCESS, State CRITICAL) {
 		super("Lunar Trollheim teleport", INITIAL, SUCCESS, CRITICAL,
-				new Requirement[] {
-						new Requirement(0, Constants.AstralRune),
-						new Requirement(0, Constants.LawRune),
-						new Requirement(1, Constants.MudBattleStaff)
-								.or(new Requirement(1,
-										Constants.MysticMudBattleStaff)) });
+				new Both(new ItemReq(Constants.AstralRune, 0)
+				, new Both(new ItemReq(Constants.LawRune, 0)
+				, new ItemReq(Constants.MudBattleStaff, 1))));
 		State TELEPORTED = new State();
 		State TELEPORTING = new State();
 

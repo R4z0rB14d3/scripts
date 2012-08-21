@@ -384,11 +384,11 @@ public class GUI extends JFrame {
 		seed.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
-					patch.selectedSeed = (Plant) seed.getSelectedItem();
+					patch.selectedPlant = (Plant) seed.getSelectedItem();
 				}
 			}
 		});
-		seed.setSelectedItem(patch.selectedSeed);
+		seed.setSelectedItem(patch.selectedPlant);
 		row.add(activated);
 		row.add(seed);
 	}
@@ -415,8 +415,8 @@ public class GUI extends JFrame {
 			for (Patch patch : Patches.patches.values()) {
 				oos.writeInt(patch.getId());
 				oos.writeBoolean(patch.activated);
-				if (patch.selectedSeed != null)
-					oos.writeInt(patch.selectedSeed.getId());
+				if (patch.selectedPlant != null)
+					oos.writeInt(patch.selectedPlant.getId());
 				else
 					oos.writeInt(0);
 				System.out.print(".");
@@ -485,7 +485,7 @@ public class GUI extends JFrame {
 				Patch patch = Patches.patches.get(id);
 				patch.activated = activated;
 				if (patch != null && seedId != 0) {
-					patch.selectedSeed = Plant.seeds.get(seedId);
+					patch.selectedPlant = Plant.seeds.get(seedId);
 				}
 				System.out.print(".");
 			}
