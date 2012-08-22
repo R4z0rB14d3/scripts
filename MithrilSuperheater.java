@@ -91,21 +91,21 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 						&& !cancelTimer.isRunning())
 					break;
 				System.out.print("(" + option1 + ")");
-				if (option1.equals("Mithril ore")) {
-					if (Inventory.getCount(2359) > 0)
-						while (!Bank.deposit(2359, 5) && isRunning())
-							Time.sleep(5);
-					if (Inventory.getCount(447) > 0)
-						while (!Bank.deposit(447, 5) && isRunning())
-							Time.sleep(5);
-					break;
-				} else if (option1.equals("Coal")) {
-					if (Inventory.getCount(2359) > 0)
-						while (!Bank.deposit(2359, 5) && isRunning())
-							Time.sleep(5);
-					if (Inventory.getCount(453) > 0)
-						while (!Bank.deposit(453, 5) && isRunning())
-							Time.sleep(5);
+				if (option1.equals("Mithril ore") || option1.equals("Coal")) {
+					Timer depositTimer = new Timer(1200);
+					while (!Bank.deposit(2359, 5) && isRunning()
+							&& depositTimer.isRunning())
+						Time.sleep(5);
+					
+					xPos = (int) mithrilBar.getX();// + Random.nextInt(-3,3);
+					yPos = (int) mithrilBar.getY();// + Random.nextInt(-3,3);
+					System.out.print("D");
+					Mouse.hop(xPos, yPos);
+					while (!Menu.contains("Deposit-5", option1) && isRunning()
+							&& depositTimer.isRunning()) {
+						Mouse.hop(xPos, yPos);
+						Time.sleep(5);					
+					}
 					break;
 				}
 				Mouse.hop(xPos, yPos);
@@ -216,7 +216,7 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 			Timer clickTimer = new Timer(0);
 			Timer endTimer = new Timer(8000);
 			int lastamount = -1;
-			while (endTimer.isRunning() && isRunning()) {
+			while (endTimer.isRunning() && isRunning() && mithrilOres > 0) {
 				Timer castTimer = new Timer(1000);
 				Mouse.hop((int) myPoint.getX(), (int) myPoint.getY());
 				boolean cast = false;
@@ -251,8 +251,6 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 							break;
 						}
 						// System.out.println("Amount: " + amount);
-						if (lastamount == amount)
-							return;
 						lastamount = amount;
 					}
 					Mouse.hop((int) myPoint.getX(), (int) myPoint.getY());
@@ -298,7 +296,9 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 
 	@Override
 	public void messageReceived(MessageEvent messageevent) {
-		if (messageevent.getMessage().contains("four heaps of coal")) {
+		if (messageevent.getMessage().contains("four heaps of coal")
+				|| messageevent.getMessage().contains(
+						"cast superheat item on ore")) {
 			mithrilOres = 0;
 		}
 	}
