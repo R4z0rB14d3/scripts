@@ -20,6 +20,7 @@ import org.powerbot.game.api.util.Random;
 import org.powerbot.game.api.util.Time;
 import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.api.wrappers.Tile;
+import org.powerbot.game.api.wrappers.widget.WidgetChild;
 import org.powerbot.game.bot.event.MessageEvent;
 import org.powerbot.game.bot.event.listener.MessageListener;
 import org.powerbot.game.bot.event.listener.PaintListener;
@@ -42,6 +43,9 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 
 		@Override
 		public void run() {
+			boolean gotMithrilOres = false;
+			boolean gotCoal = false;
+
 			int xPos, yPos;
 			Timer start = new Timer(0);
 			Timer bankTimer = new Timer(0);
@@ -69,10 +73,62 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 				}
 				Time.sleep(5);
 			}
-			// Bank.open();
-			// if (Inventory.getCount(2359) > 0) {
-			int cnt = 0;
-			Point mithrilBar = new Point(578, 313);
+			boolean barsDeposited = false;
+			for (WidgetChild wdg : Widgets.get(763, 0).getChildren()) {
+				System.out.print("(" + wdg.getIndex() + ")");
+				if (wdg.getChildId() == 2359 && !barsDeposited) {
+					xPos = (int) wdg.getCentralPoint().getX();// +
+																// Random.nextInt(-3,3);
+					yPos = (int) wdg.getCentralPoint().getY();// +
+																// Random.nextInt(-3,3);
+					System.out.print("MB");
+					Mouse.hop(xPos, yPos);
+					while (!(Menu.contains("Deposit", "Mithril bar") || Menu
+							.contains("Deposit-5", "Mithril bar"))
+							&& isRunning()) {
+						Mouse.hop(xPos, yPos);
+						Time.sleep(5);
+					}
+					if (Menu.contains("Deposit-5", "Mithril bar")) {
+						Mouse.click(false);
+						Time.sleep(20, 25);
+						Mouse.hop(xPos, yPos + 48);
+						Mouse.click(true);
+					} else {
+						Mouse.click(true);
+					}
+					barsDeposited = true;
+				} else if (wdg.getChildId() == 447) {
+					xPos = (int) wdg.getCentralPoint().getX();// +
+																// Random.nextInt(-3,3);
+					yPos = (int) wdg.getCentralPoint().getY();// +
+																// Random.nextInt(-3,3);
+					System.out.print("MO");
+					Mouse.hop(xPos, yPos);
+					while (!(Menu.contains("Deposit", "Mithril ore") || Menu
+							.contains("Deposit-1", "Mithril ore"))
+							&& isRunning()) {
+						Mouse.hop(xPos, yPos);
+						Time.sleep(5);
+					}
+					Mouse.click(true);
+				} else if (wdg.getChildId() == 453 && wdg.getIndex() < 10) {
+					xPos = (int) wdg.getCentralPoint().getX();// +
+																// Random.nextInt(-3,3);
+					yPos = (int) wdg.getCentralPoint().getY();// +
+																// Random.nextInt(-3,3);
+					System.out.print("CO");
+					Mouse.hop(xPos, yPos);
+					while (!(Menu.contains("Deposit", "Coal") || Menu.contains(
+							"Deposit-1", "Coal")) && isRunning()) {
+						Mouse.hop(xPos, yPos);
+						Time.sleep(5);
+					}
+					Mouse.click(true);
+				}
+			}
+			System.out.println("...");
+			// Point mithrilBar = new Point(578, 313);
 			/*
 			 * for (WidgetChild wdg : Widgets.get(763, 0).getChildren()) { if
 			 * (wdg.getChildId() == 2359) { cnt++; mithrilBar =
@@ -80,46 +136,26 @@ public class MithrilSuperheater extends ActiveScript implements PaintListener,
 			 */
 			// System.out.println("COUNT" = cnt);
 			// if(cnt>0) {
-			xPos = (int) mithrilBar.getX();// + Random.nextInt(-3,3);
-			yPos = (int) mithrilBar.getY();// + Random.nextInt(-3,3);
-			System.out.print("D");
-			Mouse.hop(xPos, yPos);
-			Timer cancelTimer = new Timer(600);
-			while (!Menu.contains("Deposit-5", "Mithril bar") && isRunning()) {
-				String option1 = Menu.getOptions()[0];
-				if (Menu.getActions()[0].equals("Cancel")
-						&& !cancelTimer.isRunning())
-					break;
-				System.out.print("(" + option1 + ")");
-				if (option1.equals("Mithril ore") || option1.equals("Coal")) {
-					Timer depositTimer = new Timer(1200);
-					while (!Bank.deposit(2359, 5) && isRunning()
-							&& depositTimer.isRunning())
-						Time.sleep(5);
-					
-					xPos = (int) mithrilBar.getX();// + Random.nextInt(-3,3);
-					yPos = (int) mithrilBar.getY();// + Random.nextInt(-3,3);
-					System.out.print("D");
-					Mouse.hop(xPos, yPos);
-					while (!Menu.contains("Deposit-5", option1) && isRunning()
-							&& depositTimer.isRunning()) {
-						Mouse.hop(xPos, yPos);
-						Time.sleep(5);					
-					}
-					break;
-				}
-				Mouse.hop(xPos, yPos);
-				Time.sleep(5);
-			}
-			Mouse.click(false);
-			Time.sleep(20, 25);
-			Mouse.hop(xPos, yPos + 48);
-			Mouse.click(true);
+			/*
+			 * xPos = (int) mithrilBar.getX();// + Random.nextInt(-3,3); yPos =
+			 * (int) mithrilBar.getY();// + Random.nextInt(-3,3);
+			 * System.out.print("D"); Mouse.hop(xPos, yPos);
+			 * 
+			 * while (!Menu.contains("Deposit-5", "Mithril bar") && isRunning())
+			 * { String option1 = Menu.getActions()[0]; System.out.print("(" +
+			 * option1 + ")"); if (Menu.getActions()[0].equals("Cancel") &&
+			 * !cancelTimer.isRunning()) { Timer depositTimer = new Timer(1200);
+			 * while (!Bank.deposit(2359, 5) && isRunning() &&
+			 * depositTimer.isRunning()) Time.sleep(5); break; } Mouse.hop(xPos,
+			 * yPos); Time.sleep(5); } Mouse.click(false); Time.sleep(20, 25);
+			 * Mouse.hop(xPos, yPos + 48); Mouse.click(true);
+			 */
 			// }
 
 			// while (!Bank.deposit(2359, 5) && isRunning()) {
 			// Bank.open();
 			// }
+			Timer cancelTimer = new Timer(600);
 			barsProduced += 5;
 			// }
 			// while(!Bank.withdraw(447, 5)) Bank.open();
