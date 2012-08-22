@@ -12,7 +12,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import org.powerbot.concurrent.Task;
+import org.powerbot.concurrent.LoopTask;
 import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.game.api.ActiveScript;
 import org.powerbot.game.api.Manifest;
@@ -29,16 +29,17 @@ import org.powerbot.game.api.util.Timer;
 import org.powerbot.game.api.wrappers.widget.WidgetChild;
 import org.powerbot.game.bot.event.listener.PaintListener;
 
+import scripts.PathRecorder;
 import scripts.farming.modules.Banker;
 import scripts.farming.modules.DoPatches;
 import scripts.farming.modules.RunOtherScriptv2;
-import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
 import scripts.state.StateStrategy;
 import scripts.state.edge.Edge;
 import scripts.state.edge.Option;
+import scripts.state.edge.Task;
 import scripts.state.edge.Timeout;
 import scripts.state.tools.OptionSelector;
 
@@ -67,10 +68,25 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 	public RunOtherScriptv2 MODULE_RUN_SCRIPT;
 
 	BufferedImage proggy;
+	
+	
+	LoopTask resetState = new LoopTask() {
+
+		@Override
+		public int loop() {
+			if(FarmingProject.this.isLocked() || FarmingProject.this.isSilentlyLocked()) {
+				//stateStrategy.reset();
+				System.out.println("Reset:");
+				stateStrategy.getCurrentState().cleanEdges();
+			}
+			return 0;
+		}
+		
+	};
 
 	protected void setup() {
 		try {
-			
+
 			BufferedImage img;
 			try {
 				File imgPath = new File("src/scripts/farming/images/proggy.png");
@@ -80,18 +96,19 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					int w = img.getWidth(null);
 					int h = img.getHeight(null);
 					System.out.println("Width: " + h);
-					proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+					proggy = new BufferedImage(w, h,
+							BufferedImage.TYPE_INT_ARGB);
 					Graphics g = proggy.getGraphics();
 					g.drawImage(img, 0, 0, null);
 				}
 			} catch (IOException e) {
-				proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
+				proggy = new BufferedImage(0, 0, BufferedImage.TYPE_INT_RGB);
 				e.printStackTrace();
 			}
-			
+
 			initialFarmingLevel = Skills.getLevel(Skills.FARMING);
 			initialFarmingExp = Skills.getExperience(Skills.FARMING);
-			
+
 			System.out.println("Initialize...");
 
 			loader = new ScriptLoader();
@@ -108,13 +125,13 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 
 			provide(stateStrategy = new StateStrategy(LOAD_GUI, Condition.TRUE));
 			provide(new Antiban());
-			
+
 			Condition validateRequirements = new Condition() {
 				public boolean validate() {
-					if(!RunOtherScriptv2.requirements.validate()) return false;
+					if (!RunOtherScriptv2.requirements.validate())
+						return false;
 					for (Location location : Location.locations) {
-						if (location.activated
-								&& !location.checkRequirements())
+						if (location.activated && !location.checkRequirements())
 							return false;
 					}
 					return true;
@@ -126,11 +143,14 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					System.out.println("Total work = "
 							+ Patches.countAllWork(true));
 					boolean b = false;
-					if(!RunOtherScriptv2.requirements.validate()) return false;
+					if (!RunOtherScriptv2.requirements.validate())
+						return false;
 					for (Location location : Location.locations) {
 						if (!location.isBank() && location.activated
-								&& location.checkRequirements())
+								&& location.checkRequirements()) {
+							System.out.println(location.name + " seems great!");
 							b = true;
+						}
 					}
 					return Patches.countAllWork(true) > 0 && b;
 				}
@@ -154,15 +174,11 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 
 								if (location.activated
 										&& mostWorkCount < location
-												.countWork(true)) {
+												.countWork(true)
+												&& location.checkRequirements()) {
 									mostWorkCount = location.countWork(true);
 									loc = location;
 								}
-							}
-							if(loc != null && !loc.checkRequirements()) {
-								System.out.println("Deactivate " + loc);
-								System.out.println("Requirements not fulfilled");
-								loc.activated = false;
 							}
 							return loc;
 
@@ -183,6 +199,17 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 									return (Module) location.selectedTeleportOption;
 								}
 							});
+					state.add(new Task(new Condition() {
+						public boolean validate() {
+							return !location.checkRequirements();
+						}
+					}, INITIAL) {
+						public void run() {
+							System.out.println("Deactivate " + location);
+							System.out.println("Requirements not fulfilled");
+							location.activated = false;
+						}
+					});
 					state.add(chooseTeleport);
 					state.add(new Timeout(INITIAL, 2000));
 
@@ -238,7 +265,8 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 			INITIAL.add(new Edge(scriptStartCondition.negate().or(
 					new Condition() {
 						public boolean validate() {
-							if(!RunOtherScriptv2.requirements.validate()) return true;
+							if (!RunOtherScriptv2.requirements.validate())
+								return true;
 							return false;
 						}
 					}), BANK_INIT_DEPOSIT));
@@ -254,8 +282,9 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 					CRITICAL_FAIL, new OptionSelector<Class<?>>() {
 						public Class<?> select() {
 							System.out.println("Selected script?");
-							if(gui.getSelectedScript() != null)
-								System.out.println("Selected script: "+ gui.getSelectedScript().getName());
+							if (gui.getSelectedScript() != null)
+								System.out.println("Selected script: "
+										+ gui.getSelectedScript().getName());
 							return gui.getSelectedScript();
 						}
 					}, scriptStartCondition, new Condition() {
@@ -271,6 +300,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		submit(resetState);
 		System.out.println("Setup finished");
 	}
 
@@ -281,9 +311,9 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 510, 200, 30);
 		Point p = Mouse.getLocation();
-		g.drawLine(0, (int)p.getY(), 640, (int)p.getY());
-		g.drawLine((int)p.getX(), 0,(int) p.getX(), 480);
-		
+		g.drawLine(0, (int) p.getY(), 640, (int) p.getY());
+		g.drawLine((int) p.getX(), 0, (int) p.getX(), 480);
+
 		g.fillRect(0, 510, 200, 30);
 		try {
 			float[] scales = { 1f, 1f, 1f, 0.95f };
@@ -317,7 +347,7 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		int lvlups = lvl - initialFarmingLevel;
 		int exp = Skills.getExperience(Skills.FARMING);
 		int expups = exp - initialFarmingExp;
-		long expph = expups * 3600 * 1000 / (timer.getElapsed() + 1);
+		int expph = Math.round(((float)expups / (timer.getElapsed() + 1)) * 3600 * 1000);
 
 		g.drawString(lvl + " (+" + lvlups + ")", 221, 464);
 		g.drawString(expups + " (" + expph + "/H)", 362, 464);
@@ -377,7 +407,8 @@ public class FarmingProject extends ActiveScript implements PaintListener {
 		revoke(s);
 	}
 
-	public class Antiban extends Strategy implements Task {
+	public class Antiban extends Strategy implements
+			org.powerbot.concurrent.Task {
 		Timer timer = new Timer(Random.nextInt(30000, 40000));
 
 		public void run() {

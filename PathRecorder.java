@@ -16,6 +16,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.powerbot.concurrent.LoopTask;
 import org.powerbot.concurrent.Task;
 import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.game.api.ActiveScript;
@@ -40,6 +41,29 @@ import scripts.farming.EntityWrapper;
 @Manifest(authors = { "djabby" }, name = "PathRecorder", description = "s=start/stop,w=write,r=read,r=run", version = 1.37)
 public class PathRecorder extends ActiveScript implements KeyListener,
 		PaintListener {
+	
+	
+	public void onStop() {
+		System.out.println("onStop");
+	}
+	
+	LoopTask lt = new LoopTask() {
+		
+		public void stop() {
+			System.out.println("ONSTOP");
+			super.stop();
+		}
+
+		@Override
+		public int loop() {
+			System.out.println("0=" + PathRecorder.this.isLocked());
+			System.out.println("1=" + PathRecorder.this.isPaused());
+			System.out.println("2=" + PathRecorder.this.isRunning());
+			System.out.println("3=" + PathRecorder.this.isSilentlyLocked());
+			return 0;
+		}
+		
+	};
 
 	public class Path {
 		List<Tile> nodes;
@@ -220,6 +244,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 	BufferedImage proggy;
 
 	public void setup() {
+		this.submit(lt);
 		BufferedImage img;
 		try {
 			File imgPath = new File("src/scripts/images/proggy.png");
@@ -240,7 +265,7 @@ public class PathRecorder extends ActiveScript implements KeyListener,
 
 		provide(new Collect());
 		provide(new Running());
-		provide(new Example());
+		//provide(new Example());
 	}
 	
 	public class Example extends Strategy implements Task {

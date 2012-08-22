@@ -9,7 +9,6 @@ import scripts.farming.Magic;
 import scripts.state.Condition;
 import scripts.state.Module;
 import scripts.state.State;
-import scripts.state.edge.Animation;
 import scripts.state.edge.AssureLocation;
 import scripts.state.edge.MagicCast;
 import scripts.state.edge.Task;
@@ -43,6 +42,7 @@ public class LunarBank extends Module {
 				Time.sleep(700);
 			}
 		});
+		CASTED.add(new Timeout(INITIAL,12000));
 		// Unsafe, because spell can be interrupted
 //		TELEPORTING.add(new Animation(Condition.TRUE, 16385, TELEPORTED,
 //				new Timeout(INITIAL, 15000)));

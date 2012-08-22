@@ -69,6 +69,7 @@ public class FaladorLoadstone extends Module{
 				Time.sleep(700);
 			}
 		});
+		CASTED.add(new Timeout(INITIAL,12000));
 	//	TELEPORTING.add(new Animation(Condition.TRUE, 16385, TELEPORTED,
 	//			new Timeout(INITIAL, 15000)));
 		TELEPORTING.add(new AssureLocation(Condition.TRUE,new Tile(2967,3403,0),3,TELEPORTED));

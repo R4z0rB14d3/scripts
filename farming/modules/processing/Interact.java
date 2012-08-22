@@ -58,7 +58,7 @@ public class Interact extends SharedModule<Product> {
 
 		getInitialState().add(new Either(new Condition() {
 			public boolean validate() {
-				return item.get().size() > 0;
+				return Inventory.getCount(itemID.get())>0;
 			}
 		}, FOUND_ITEM, getSuccessState()));
 

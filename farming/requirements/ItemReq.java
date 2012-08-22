@@ -46,6 +46,7 @@ public class ItemReq implements Requirement<ItemReq> {
 		 * boolean accept(Item item) { return item.getId() == id_; } }).length
 		 * >= Math.max(1, amount);
 		 */
+		if(id_ == 0) return true;
 		boolean b = Inventory.getCount(id.get())
 				+ (Equipment.WEAPON.getEquipped() == id_ ? 1 : 0) >= Math.max(
 				1, amount);

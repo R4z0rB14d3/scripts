@@ -20,7 +20,8 @@ import scripts.state.edge.Edge;
 
 public class Location {
 
-	public Location(String name_, Area area_) {
+	public Location(Type type_, String name_, Area area_) {
+		type = type_;
 		name = name_;
 		area = area_;
 	}
@@ -44,6 +45,16 @@ public class Location {
 
 	public Module getModule() {
 		return module;
+	}
+
+	public enum Type {
+		Normal, Bank, Tree, Special
+	};
+
+	Type type;
+
+	public Type getType() {
+		return type;
 	}
 
 	public boolean isBank() {
@@ -125,21 +136,29 @@ public class Location {
 	}
 
 	public static final Location[] locations = {
-			new Location("Bank", null),
-			new Location("Morytania", new Area(new Tile(3594, 3533, 0),
-					new Tile(3609, 3518, 0))),
-			new Location("Falador", new Area(new Tile(3048, 3314, 0), new Tile(
-					3063, 3300, 0))),
-			new Location("Ardougne", new Area(new Tile(2661, 3380, 0),
-					new Tile(2672, 3369, 0))),
-			new Location("Catherby", new Area(new Tile(2800, 3471, 0),
-					new Tile(2816, 3458, 0))),
-			new Location("Trollheim", new Area(new Tile(2803, 3689, 0),
-					new Tile(2822, 3671, 0))) };
+			new Location(Type.Bank, "Bank", null),/*
+			new Location(Type.Normal, "Cactus", new Area(
+					new Tile(3048, 3314, 0), new Tile(3063, 3300, 0))),
+			new Location(Type.Tree, "Calquat", new Area(
+					new Tile(2784, 3090, 0), new Tile(2804, 3110, 0))),
+			new Location(Type.Normal, "Draynor", new Area(new Tile(3082, 3372,
+					0), new Tile(3092, 3350, 0))),*/
+
+			new Location(Type.Normal, "Morytania", new Area(new Tile(3594,
+					3533, 0), new Tile(3609, 3518, 0))),
+			new Location(Type.Normal, "Falador", new Area(new Tile(3048, 3314,
+					0), new Tile(3063, 3300, 0))),
+			new Location(Type.Normal, "Ardougne", new Area(new Tile(2661, 3380,
+					0), new Tile(2672, 3369, 0))),
+			new Location(Type.Normal, "Catherby", new Area(new Tile(2800, 3471,
+					0), new Tile(2816, 3458, 0))),
+			new Location(Type.Normal, "Trollheim", new Area(new Tile(2803,
+					3689, 0), new Tile(2822, 3671, 0))) };
 
 	public boolean checkRequirements() {
-		return module == null || (module.getRequirement().validate()
-				&& selectedTeleportOption.getRequirement().validate()
-				&& DoPatches.getSeedRequirements(this).validate());
+		return (module != null && module.getRequirement().validate())
+				&& (selectedTeleportOption != null && selectedTeleportOption
+						.getRequirement().validate())
+				&& DoPatches.getSeedRequirements(this).validate();
 	}
 }

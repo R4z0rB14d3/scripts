@@ -95,6 +95,7 @@ public class ITBarbFish {
 						mudstaff.getWidgetChild().click(true);
 
 					Magic.cast(Magic.Lunar.TeleportBarbarian.getWidgetId());
+					Time.sleep(5000);
 				}
 			}
 		}

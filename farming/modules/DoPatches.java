@@ -6,7 +6,6 @@ import java.util.List;
 import org.powerbot.game.api.methods.Widgets;
 import org.powerbot.game.api.methods.interactive.NPCs;
 import org.powerbot.game.api.methods.tab.Inventory;
-import org.powerbot.game.api.util.Filter;
 import org.powerbot.game.api.wrappers.Tile;
 import org.powerbot.game.api.wrappers.interactive.NPC;
 import org.powerbot.game.api.wrappers.node.SceneObject;
@@ -112,6 +111,10 @@ public class DoPatches extends Module {
 
 		final Value<String> patchName = new Value<String>() {
 			public String get() {
+				// This patch is special...
+				if(patch == Patches.patches.get(18816)) {
+					return "Herb Patch";
+				}
 				if (patch.selectedPlant == null)
 					return "";
 				if (patch.isDead())

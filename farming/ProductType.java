@@ -25,6 +25,22 @@ public class ProductType {
 	public static final ProductType VEGETABLE = new ProductType("Vegetable")
 	// .add(ProcessingModules.DROP)
 			.add(ProcessingModules.LEPRECHAUN_NOTE);
+	
+	public static final ProductType CACTUS = new ProductType("Cactus")
+	// .add(ProcessingModules.DROP)
+			.add(ProcessingModules.LEPRECHAUN_NOTE);
+	
+	public static final ProductType BELLADONNA = new ProductType("Belladonna")
+	// .add(ProcessingModules.DROP)
+			.add(ProcessingModules.LEPRECHAUN_NOTE);
+	
+	public static final ProductType EVIL_TURNIP = new ProductType("Evil Turnip")
+	// .add(ProcessingModules.DROP)
+			.add(ProcessingModules.LEPRECHAUN_NOTE);
+	
+	public static final ProductType CALQUAT = new ProductType("Calquat")
+	// .add(ProcessingModules.DROP)
+			.add(ProcessingModules.LEPRECHAUN_NOTE);
 
 	String name;
 	List<SharedModule<Product>> modules = new ArrayList<SharedModule<Product>>();

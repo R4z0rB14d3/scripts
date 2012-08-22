@@ -1,8 +1,9 @@
 package scripts.state;
 
-import org.powerbot.concurrent.Task;
+	import org.powerbot.concurrent.Task;
 import org.powerbot.concurrent.strategy.Strategy;
 import org.powerbot.game.api.methods.interactive.Players;
+import org.powerbot.game.api.util.Time;
 
 public class StateStrategy extends Strategy 
 	implements Task, org.powerbot.concurrent.strategy.Condition {
@@ -30,14 +31,25 @@ public class StateStrategy extends Strategy
 	}
 	
 	public void run() {
+		if(resetted) {
+			Time.sleep(10000);
+			resetted = false;
+		}
 		if(currentState == null) return;
 		currentState = currentState.run();
 	}
+	
+	boolean resetted = false;
 
+	public void reset() {
+		currentState = null;
+		resetted = true;
+	}
 	
 	public State getCurrentState() { return currentState; }
 	
-	public boolean validate() { 
+	public boolean validate() {
+
 		if(currentState == null) {
 			if(startCondition.validate()) {
 				currentState = initialState;

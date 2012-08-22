@@ -45,8 +45,7 @@ public class State {
 			try {
 				State s = edge.validate();
 				if (s != null) {
-					for (Edge edge_ : edges)
-						edge_.cleanup();
+					cleanEdges();
 					return s;
 				}
 			} catch (Exception e) {
@@ -54,6 +53,11 @@ public class State {
 			}
 		}
 		return this;
+	}
+	
+	public void cleanEdges() {
+		for (Edge edge_ : edges)
+			edge_.cleanup();
 	}
 
 	public void removeAllEdges() {

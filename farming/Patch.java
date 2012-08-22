@@ -120,7 +120,7 @@ public class Patch {
 		id = id_;
 		setType(type_);
 		setting = setting_;
-		shift = shift_ * 4;
+		shift = shift_;
 		location = location_;
 	}
 

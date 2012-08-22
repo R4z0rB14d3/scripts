@@ -48,7 +48,7 @@ public class CabbageFalador extends Module {
 				0), 3, TELEPORTED));
 		TELEPORTING.add(new Timeout(INITIAL, 12000));
 		TELEPORTED.add(new Walk(Condition.TRUE, new Tile(3052, 3299, 0),
-				IN_FRONT_OF_GATE, new Timeout(INITIAL, 5000)));
+				IN_FRONT_OF_GATE, new Timeout(INITIAL, 7000)));
 		IN_FRONT_OF_GATE.add(new InteractSceneObject(new Condition() {
 			public boolean validate() {
 				SceneObject gate = SceneEntities.getNearest(7049);

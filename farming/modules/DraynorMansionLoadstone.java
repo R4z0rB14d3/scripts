@@ -16,23 +16,28 @@ import scripts.state.edge.Task;
 import scripts.state.edge.Timeout;
 import scripts.state.edge.WalkPath;
 
-@Target("Falador")
-public class DraynorLoadstone extends Module {
+@Target("Draynor")
+public class DraynorMansionLoadstone extends Module {
 
-	public DraynorLoadstone(State INITIAL, State SUCCESS, State CRITICAL) {
+	public DraynorMansionLoadstone(State INITIAL, State SUCCESS, State CRITICAL) {
 		super("Draynor loadstone", INITIAL, SUCCESS, CRITICAL);
 
 		State TELEPORTED = new State();
 		State TELEPORTING = new State();
 		State CASTED = new State();
 
-		Tile[] path = new Tile[] { new Tile(3103, 3299, 0),
-				new Tile(3099, 3306, 0), new Tile(3095, 3312, 0),
-				new Tile(3091, 3319, 0), new Tile(3084, 3323, 0),
-				new Tile(3083, 3325, 0), new Tile(3078, 3331, 0),
-				new Tile(3072, 3335, 0), new Tile(3069, 3328, 0),
-				new Tile(3063, 3324, 0), new Tile(3061, 3317, 0),
-				new Tile(3057, 3311, 0) };
+		Tile[] path = new Tile[] { 
+				new Tile(3104,3305,0)
+				,new Tile(3103,3312,0)
+				,new Tile(3104,3319,0)
+				,new Tile(3106,3326,0)
+				,new Tile(3109,3333,0)
+				,new Tile(3106,3342,0)
+				,new Tile(3099,3346,0)
+				,new Tile(3092,3347,0)
+				,new Tile(3089,3354,0)
+				,new Tile(3087,3361,0)
+				};
 
 		INITIAL.add(new AssureLocation(Condition.TRUE, new Tile(3105, 3298, 0),
 				3, TELEPORTED));

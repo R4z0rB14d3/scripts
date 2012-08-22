@@ -80,6 +80,11 @@ public class Plant {
 	public static final int Torstol = 5304;
 	public static final int Fellstalk = 21621;
 	public static final int GoutTuber = 6311;
+	
+	public static final int Cactus = 5280;
+	public static final int EvilTurnip = 12148;
+	public static final int Belladonna = 5281;
+	public static final int Calquat = 5495;
 
 	int low, mid, high;
 	int id;
@@ -232,7 +237,18 @@ public class Plant {
 						116,"Herbs","Herbs","Diseased herbs","Dead herbs").add(ProductType.GRIMY_HERB, 21626).add(
 						ProductType.CLEAN_HERB, 21624), // ?!?!
 				new Plant("Gout", Plant.GoutTuber, Patches.Herb, 0xc0, 0xc4,
-						0xcb,"Herbs","Herbs","Diseased herbs","Dead herbs").add(ProductType.CLEAN_HERB, 3261)/*,
+						0xcb,"Herbs","Herbs","Diseased herbs","Dead herbs").add(ProductType.CLEAN_HERB, 3261),
+				new Plant("Cactus", Plant.Cactus, Patches.Cactus, 0x00, 0x00, "","","","")
+						.add(ProductType.CACTUS, 6016),
+				new Plant("Evil Turnip", Plant.EvilTurnip, Patches.EvilTurnip, 0x04,0x05, "","","","")
+						.add(ProductType.EVIL_TURNIP, 12134),
+				new Plant("Belladonna", Plant.Belladonna, Patches.Belladonna, 0x04, 0x111, "Belladonna","Belladonna","","")
+						.add(ProductType.BELLADONNA, 2398),
+				new Plant("Calquat", Plant.Calquat, Patches.Calquat, 0x04, 0x111, "Calquat Tree", "Calquat Tree", "Diseased Calquat Tree", "Dead Calquat Tree")
+						.add(ProductType.CALQUAT, 5980)
+						
+						
+						/*,
 				// new Seed("Barley",5305,Patches.Hops,)
 				// new Seed("Redberry",5101,Patches.Bush,0x05,0x09,0x0e),
 				new Plant("Oak Tree", 5370, Patches.Tree, 0x08, 0x0c, 0x0e),

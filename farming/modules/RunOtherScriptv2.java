@@ -3,7 +3,6 @@ package scripts.farming.modules;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -24,11 +23,10 @@ import scripts.farming.ScriptWrapper;
 import scripts.farming.requirements.EmptyReq;
 import scripts.farming.requirements.Requirement;
 import scripts.state.Condition;
+import scripts.state.Constant;
 import scripts.state.Module;
 import scripts.state.QueuedState;
 import scripts.state.State;
-import scripts.state.StateStrategy;
-import scripts.state.edge.Animation;
 import scripts.state.edge.Edge;
 import scripts.state.edge.ExceptionSafeTask;
 import scripts.state.edge.MagicCast;
@@ -42,6 +40,43 @@ public class RunOtherScriptv2 extends Module {
 	public Class<?> runningScript = null;
 	public ActiveScript activeScript;
 	public static Requirement<?> requirements = new EmptyReq();
+	
+	private class CheckInterruption extends Strategy implements org.powerbot.concurrent.Task {
+		Timer castedTimer = new Timer(0);
+
+		public void run() {
+			if (!castedTimer.isRunning()) {
+				Magic.cast(Magic.Lunar.RemoteFarm.getWidgetId());
+				castedTimer.setEndIn(12000);
+			}
+			Magic.cureAllDiseased();
+		}
+
+		public boolean validate() {
+			boolean valid = false;
+			for (Patch patch : Patches.patches.values()) {
+				if (patch.isDiseased())
+					valid = true;
+			}
+			return FarmingProject.gui.miscSettings.useRemoteFarm
+					&& valid;
+		}
+	};
+	
+	private class CloseRemoteFarm extends Strategy implements  org.powerbot.concurrent.Task {
+		public void run() {
+			Widgets.get(1082, 154).click(true);
+		}
+
+		public boolean validate() {
+			boolean valid = false;
+			for (Patch patch : Patches.patches.values()) {
+				if (patch.isDiseased())
+					valid = true;
+			}
+			return !valid && Widgets.get(1082, 154).validate();
+		}
+	};
 
 	public static ActiveScript initiateScript(FarmingProject main,
 			Class<?> script) throws Exception {
@@ -68,7 +103,7 @@ public class RunOtherScriptv2 extends Module {
 	}
 
 	public RunOtherScriptv2(final FarmingProject main, State initial,
-			State success, final State critical,
+			final State success, final State critical,
 			OptionSelector<Class<?>> selector, final Condition run,
 			final Condition interrupt) {
 		super("Run other script", initial, success, critical);
@@ -106,12 +141,14 @@ public class RunOtherScriptv2 extends Module {
 			}
 
 			final State interrupted = new State();
+			final Constant<Method> cleanup = new Constant<Method>(null);
 
 			prepared.add(new ExceptionSafeTask(Condition.TRUE, state, critical) {
 				public void run() throws Exception {
 					state.removeAllEdges();
 
 					script.getDeclaredMethod("prepare").invoke(null);
+					cleanup.set(script.getDeclaredMethod("cleanup"));
 					runningScript = script;
 
 					if (!main.gui.miscSettings.setupScript) {
@@ -152,7 +189,7 @@ public class RunOtherScriptv2 extends Module {
 						}
 					}, interrupted));
 					interrupted.add(new ExceptionSafeTask(Condition.TRUE,
-							cleaningUp, critical) {
+							cleaningUp, success) {
 						public void run() throws Exception {
 							for (Strategy s : newStrategies) {
 								main.customRevoke(s);
@@ -170,8 +207,11 @@ public class RunOtherScriptv2 extends Module {
 					 */
 
 					final State checkInterruptions = new State();
-					final StateStrategy checkInterruptionsStrategy = new StateStrategy(
-							checkInterruptions);
+					// final StateStrategy checkInterruptionsStrategy = new
+					// StateStrategy(
+					// checkInterruptions);
+
+
 
 					State curingDiseased = new State("CD");
 					State disablingRemoteFarm = new State("DRF"); // when
@@ -329,26 +369,19 @@ public class RunOtherScriptv2 extends Module {
 
 									});
 						}
-						Condition cond = (Condition) new Condition() {
-							public boolean validate() {
-								return checkInterruptionsStrategy
-										.getCurrentState() == checkInterruptions;
-							}
-						}.and(interrupt.negate()).and(strategy);
-
 						Condition cond2 = new Condition() {
 							public boolean validate() {
 								boolean checkIS, interruptNeg, strateg;
 								// System.out.print("(" + (ru =
 								// run.validate()));
-								System.out.print(","
+								/*System.out.print(","
 										+ (checkIS = (checkInterruptionsStrategy
-												.getCurrentState() == checkInterruptions)));
+												.getCurrentState() == checkInterruptions)));*/
 								System.out.print(","
 										+ (interruptNeg = !interrupt.validate()));
 								System.out.print(","
 										+ (strateg = strategy.validate()));
-								return checkIS && interruptNeg && strateg;
+								return interruptNeg && strateg;
 							}
 						};
 
@@ -356,8 +389,12 @@ public class RunOtherScriptv2 extends Module {
 								customTaskList.toArray(customTasks)));
 						newStrategies.add(newStrategy);
 					}
-					main.customProvide(checkInterruptionsStrategy);
-					newStrategies.add(checkInterruptionsStrategy);
+					Strategy checkInterruption = new CheckInterruption();
+					Strategy closeRemoteFarmWidget = new CloseRemoteFarm();
+					main.customProvide(checkInterruption);
+					newStrategies.add(checkInterruption);
+					main.customProvide(closeRemoteFarmWidget);
+					newStrategies.add(closeRemoteFarmWidget);
 
 				}
 			});

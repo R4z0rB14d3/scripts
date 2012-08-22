@@ -62,7 +62,7 @@ public class Patches {
 	public static Integer countAllWork(boolean diseasedToo) {
 		Integer count = 0;
 		for (Patch patch : patches.values()) {
-			if (patch.activated
+			if (patch.activated && patch.getLocation() != null
 					&& patch.getLocation().activated
 					&& (patch.isDead() || (diseasedToo && patch.isDiseased())
 							|| patch.getProgress() == 1.0 || patch.isEmpty())) {
@@ -116,32 +116,36 @@ public class Patches {
 				new Patch(8550, Location.getLocation("Falador"), Allotment,
 						504, 0), // Fala West
 				new Patch(8551, Location.getLocation("Falador"), Allotment,
-						504, 2), // Fala East
+						504, 8), // Fala East
 				new Patch(7847, Location.getLocation("Falador"), Flower, 508, 0),
 				new Patch(8150, Location.getLocation("Falador"), Herb, 515, 0),
 				new Patch(8552, Location.getLocation("Catherby"), Allotment,
-						504, 4), // Cath North
+						504, 16), // Cath North
 				new Patch(8553, Location.getLocation("Catherby"), Allotment,
-						504, 6), // Cath South
+						504, 24), // Cath South
 				new Patch(7848, Location.getLocation("Catherby"), Flower, 508,
-						2),
-				new Patch(8151, Location.getLocation("Catherby"), Herb, 515, 2),
+						8),
+				new Patch(8151, Location.getLocation("Catherby"), Herb, 515, 8),
 				new Patch(8554, Location.getLocation("Ardougne"), Allotment,
 						505, 0), // Adg West
 				new Patch(8555, Location.getLocation("Ardougne"), Allotment,
-						505, 2), // Adg East
+						505, 8), // Adg East
 				new Patch(7849, Location.getLocation("Ardougne"), Flower, 508,
-						4),
-				new Patch(8152, Location.getLocation("Ardougne"), Herb, 515, 4),
+						16),
+				new Patch(8152, Location.getLocation("Ardougne"), Herb, 515, 16),
 				new Patch(8556, Location.getLocation("Morytania"), Allotment,
-						505, 4), // Mory West
+						505, 16), // Mory West
 				new Patch(8557, Location.getLocation("Morytania"), Allotment,
-						505, 6), // Mory East
+						505, 24), // Mory East
 				new Patch(7850, Location.getLocation("Morytania"), Flower, 508,
-						6),
-				new Patch(8153, Location.getLocation("Morytania"), Herb, 515, 6),
+						24),
+				new Patch(8153, Location.getLocation("Morytania"), Herb, 515, 24),
 				new Patch(18816, Location.getLocation("Trollheim"), Herb, 830,
-						0)
+						0)/*,
+				new Patch(7771, Location.getLocation("Cactus"), Cactus,  512, 0),
+				new Patch(23760, Location.getLocation("Draynor"), EvilTurnip, 1171, 7),
+				new Patch(7572, Location.getLocation("Draynor"), Belladonna, 512, 16 ),
+				new Patch(7807, Location.getLocation("TaiBwoWannai"), Calquat, 507, 24)*/
 
 		};
 		for (Patch patch : patchesPlain) {
