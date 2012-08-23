@@ -58,27 +58,38 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				stop();
 				return;
 			}
-			if (countVials > 2) {
-				if (!Bank.deposit(229, 0)) {
-					System.out.println("Failed to store vials: Try again");
-					return;
+			if (countVials > 2 || countSummDrinks < 6) {
+				Timer bankTimer = new Timer(1000);
+				while(!Bank.deposit(229, 0)) {
+					if(!bankTimer.isRunning()) {
+						System.out.println("Failed to store empt vials. Try later");
+						return;
+					}
 				}
 			}
 			if (countSummDrinks < 6) {
-				if (!Bank.withdraw(12140, 5)) {
-					System.out.print("Failed to withdraw summoning pots: ");
-					if (Bank.getItem(12140) == null) {
-						System.out
-								.println("Out of summoning pots (4). End script");
-						stop();
+				Timer bankTimer = new Timer(1000);
+				while(!Bank.deposit(12140, 5)) {
+					if(!bankTimer.isRunning()) {
+						System.out.print("Failed to withdraw summoning pots: ");
+						if (Bank.getItem(12140) == null) {
+							System.out
+									.println("Out of summoning pots (4). End script");
+							stop();
+						}
+						System.out.println("Try later");
+						return;
 					}
-					System.out.println("Try again");
-					return;
-				}
+				}	
+
 			}
 			if (countCockatriceEggs > 0) {
-				Timer depositTimer = new Timer(1000);
-				while(depositTimer.isRunning()) {
+				Timer bankTimer = new Timer(1000);
+				while(true) {
+					if(!bankTimer.isRunning()) {
+						System.out.println("Failed to store cockatrice eggs. Try later");
+						return;
+					}
 					if(Bank.deposit(12109, 0)) {
 						lastcount = count;
 						break;
@@ -86,31 +97,39 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				}
 			}
 			if (Widgets.get(747, 0).getTextureId() == 1244) {
-				if (countPouches == 0) {
-					if (!Bank.withdraw(12015, 1)) {
+				Timer bankTimer = new Timer(1000);
+				while(!Bank.deposit(12109, 0)) {
+					if(!bankTimer.isRunning()) {
 						System.out.print("Failed to withdraw pouch: ");
 						if (Bank.getItem(12015) == null) {
 							System.out.println("Out of eggs. End script");
 							stop();
+							return;
 						}
-						System.out.println("Try again");
+						System.out.println("Try later");
+						return;
 					}
-				}
+				}				
 			}
 			if (!Bank.withdraw(1944, 0)) {
-				System.out.print("Failed to withdraw eggs: ");
-				if (Bank.getItem(1944) == null) {
-					System.out.println("Out of eggs. End script");
-					stop();
-				}
-				System.out.println("Try again");
-				return;
+				Timer bankTimer = new Timer(1000);
+				while(!Bank.deposit(12109, 0)) {
+					if(!bankTimer.isRunning()) {
+						System.out.print("Failed to withdraw eggs: ");
+						if (Bank.getItem(1944) == null) {
+							System.out.println("Out of eggs. End script");
+							stop();
+						}
+						System.out.println("Try later");
+						return;
+					}
+				}	
 			}
 			Bank.close();
 		}
 
 		public boolean validate() {
-			return Inventory.getCount(1944) == 0;
+			return Inventory.getCount(1944) == 0 || Settings.get(1177) <= 3;
 		}
 
 	}
