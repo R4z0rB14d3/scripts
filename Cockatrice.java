@@ -58,7 +58,7 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				stop();
 				return;
 			}
-			if (countVials > 2 || countSummDrinks < 6) {
+			if (countVials > 2 || (countSummDrinks < 6 && countVials > 0)) {
 				Timer bankTimer = new Timer(1000);
 				while(!Bank.deposit(229, 0)) {
 					if(!bankTimer.isRunning()) {
@@ -185,7 +185,6 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 					Mouse.hop((int) p.getX(), (int) p.getY());
 					Time.sleep(10);
 				}
-				System.out.println(Menu.getActions()[0]);
 				if (!Menu.getActions()[0].equals("Cast")) {
 					System.out
 							.println("Casting scroll has to be the left-click option in suicide mode. Ignore");
