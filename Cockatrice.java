@@ -32,7 +32,7 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 	Timer timer = new Timer(0);
 	int count = 0;
 	int lastcount = 0;
-	boolean suicide = true;
+	boolean suicide = false;
 
 	@Override
 	protected void setup() {
@@ -52,6 +52,7 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 					* 3 + Inventory.getCount(12140) * 4;
 			int countCockatriceEggs = Inventory.getCount(12109);
 			int countPouches = Inventory.getCount(12015);
+			boolean invIsFull = Inventory.isFull();
 
 			if (!Bank.open()) {
 				System.out.println("Failed to open bank. End script");
@@ -59,18 +60,19 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				return;
 			}
 			if (countVials > 2 || (countSummDrinks < 6 && countVials > 0)) {
-				Timer bankTimer = new Timer(1000);
-				while(!Bank.deposit(229, 0)) {
-					if(!bankTimer.isRunning()) {
-						System.out.println("Failed to store empt vials. Try later");
+				Timer bankTimer = new Timer(2000);
+				while (!Bank.deposit(229, 0)) {
+					if (!bankTimer.isRunning()) {
+						System.out
+								.println("Failed to store empt vials. Try later");
 						return;
 					}
 				}
 			}
 			if (countSummDrinks < 6) {
-				Timer bankTimer = new Timer(1000);
-				while(!Bank.deposit(12140, 5)) {
-					if(!bankTimer.isRunning()) {
+				Timer bankTimer = new Timer(2000);
+				while (!Bank.deposit(12140, 5)) {
+					if (!bankTimer.isRunning()) {
 						System.out.print("Failed to withdraw summoning pots: ");
 						if (Bank.getItem(12140) == null) {
 							System.out
@@ -80,26 +82,31 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 						System.out.println("Try later");
 						return;
 					}
-				}	
+				}
 
 			}
 			if (countCockatriceEggs > 0) {
-				Timer bankTimer = new Timer(1000);
-				while(true) {
-					if(!bankTimer.isRunning()) {
-						System.out.println("Failed to store cockatrice eggs. Try later");
+				Timer bankTimer = new Timer(2000);
+				while (true) {
+					if (!bankTimer.isRunning()) {
+						System.out
+								.println("Failed to store cockatrice eggs. Try later");
 						return;
 					}
-					if(Bank.deposit(12109, 0)) {
+					if (Bank.deposit(12109, 0)) {
 						lastcount = count;
 						break;
 					}
 				}
+				invIsFull = false;
 			}
 			if (Widgets.get(747, 0).getTextureId() == 1244) {
-				Timer bankTimer = new Timer(1000);
-				while(!Bank.deposit(12109, 0)) {
-					if(!bankTimer.isRunning()) {
+				Timer bankTimer = new Timer(2000);
+				if (invIsFull) {
+					Bank.deposit(1944, 0);
+				}
+				while (!Bank.withdraw(12015, 1)) {
+					if (!bankTimer.isRunning()) {
 						System.out.print("Failed to withdraw pouch: ");
 						if (Bank.getItem(12015) == null) {
 							System.out.println("Out of eggs. End script");
@@ -109,12 +116,12 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 						System.out.println("Try later");
 						return;
 					}
-				}				
+				}
 			}
 			if (!Bank.withdraw(1944, 0)) {
-				Timer bankTimer = new Timer(1000);
-				while(!Bank.deposit(12109, 0)) {
-					if(!bankTimer.isRunning()) {
+				Timer bankTimer = new Timer(2000);
+				while (!Bank.deposit(1944, 0)) {
+					if (!bankTimer.isRunning()) {
 						System.out.print("Failed to withdraw eggs: ");
 						if (Bank.getItem(1944) == null) {
 							System.out.println("Out of eggs. End script");
@@ -123,13 +130,14 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 						System.out.println("Try later");
 						return;
 					}
-				}	
+				}
 			}
 			Bank.close();
 		}
 
 		public boolean validate() {
-			return Inventory.getCount(1944) == 0 || Settings.get(1177) <= 3;
+			return Inventory.getCount(1944) == 0 || Settings.get(1177) <= 3
+					|| Widgets.get(747, 0).getTextureId() == 1244;
 		}
 
 	}
@@ -173,9 +181,18 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				Widgets.get(747, 2).interact("Cast", "Ophidian Incubation");
 				Item egg = Inventory.getItem(1944);
 				if (egg != null) {
-					egg.getWidgetChild().interact("Cast", "Ophidian Incubation -> Egg");
+					Mouse.apply(egg.getWidgetChild(), new Filter<Point>() {
+						public boolean accept(Point p) {
+							return Menu.contains("Cast",
+									"Ophidian Incubation -> Cockatrice egg")
+									|| Menu.contains("Cast",
+											"Ophidian Incubation -> Egg");
+						}
+					});
+					if (Menu.contains("Cast", "Ophidian Incubation -> Egg"))
+						Mouse.click(true);
 				}
-			} else if(!suicideCastTimer.isRunning()){
+			} else if (!suicideCastTimer.isRunning()) {
 				Timer castTimer = new Timer(500);
 				Point p = randomizePoint(Widgets.get(747, 2).getCentralPoint(),
 						1);
@@ -214,9 +231,11 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 				castTimer.reset();
 				while (!Menu.contains("Cast", "Ophidian Incubation -> Egg")
 						&& castTimer.isRunning()) {
-					if(Menu.contains("Cast","Ophidian Incubation -> Cockatrice egg")) {
+					if (Menu.contains("Cast",
+							"Ophidian Incubation -> Cockatrice egg")) {
 						egg = Inventory.getItem(1944);
-						p = randomizePoint(egg.getWidgetChild().getCentralPoint(), 4);
+						p = randomizePoint(egg.getWidgetChild()
+								.getCentralPoint(), 4);
 						castTimer.reset();
 					}
 					Mouse.hop((int) p.getX(), (int) p.getY());
@@ -229,7 +248,8 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 		}
 
 		public boolean validate() {
-			return Inventory.getCount(1944) > 0 && Settings.get(1177) > 3;
+			return Inventory.getCount(1944) > 0 && Settings.get(1177) > 3
+					&& Widgets.get(747, 0).getTextureId() != 1244;
 		}
 
 	}
@@ -242,13 +262,14 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 	@Override
 	public void onRepaint(Graphics g) {
 		g.setColor(Color.YELLOW);
-		g.fillRect(5, 5, 150, 65);
+		g.fillRect(5, 5, 150, 50);
 		g.setColor(Color.BLACK);
 		g.drawString("Time: " + timer.toElapsedString(), 7, 18);
 		g.drawString("Eggs: " + count, 7, 33);
-		g.drawString("Suicide ['s']: " + suicide, 7, 63);
-		g.drawString(Math.round((float) count
-								/ (timer.getElapsed() + 1) * 3600000) +"/H", 7, 48);
+		// g.drawString("Suicide ['s']: " + suicide, 7, 63);
+		g.drawString(
+				Math.round((float) count / (timer.getElapsed() + 1) * 3600000)
+						+ "/H", 7, 48);
 	}
 
 	@Override
@@ -263,9 +284,9 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 
 	@Override
 	public void keyTyped(KeyEvent k) {
-		if (k.getKeyChar() == 's') {
-			suicide = !suicide;
-		}
+		//if (k.getKeyChar() == 's') {
+		//	suicide = !suicide;
+		//}
 	}
 
 	@Override
