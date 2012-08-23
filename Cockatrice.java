@@ -71,7 +71,7 @@ public class Cockatrice extends ActiveScript implements PaintListener,
 			}
 			if (countSummDrinks < 6) {
 				Timer bankTimer = new Timer(2000);
-				while (!Bank.deposit(12140, 5)) {
+				while (!Bank.withdraw(12140, 5)) {
 					if (!bankTimer.isRunning()) {
 						System.out.print("Failed to withdraw summoning pots: ");
 						if (Bank.getItem(12140) == null) {
