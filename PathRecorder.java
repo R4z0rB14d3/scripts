@@ -1,10 +1,18 @@
-package scripts;
+import org.powerbot.core.event.listeners.PaintListener;
+import org.powerbot.core.script.ActiveScript;
+import org.powerbot.core.script.job.Task;
+import org.powerbot.core.script.job.state.Node;
+import org.powerbot.core.script.job.state.Tree;
+import org.powerbot.game.api.Manifest;
+import org.powerbot.game.api.methods.Walking;
+import org.powerbot.game.api.methods.input.Mouse;
+import org.powerbot.game.api.methods.interactive.Players;
+import org.powerbot.game.api.methods.node.Menu;
+import org.powerbot.game.api.util.Random;
+import org.powerbot.game.api.wrappers.Tile;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Polygon;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
@@ -14,336 +22,228 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 
-import org.powerbot.concurrent.LoopTask;
-import org.powerbot.concurrent.Task;
-import org.powerbot.concurrent.strategy.Strategy;
-import org.powerbot.game.api.ActiveScript;
-import org.powerbot.game.api.Manifest;
-import org.powerbot.game.api.methods.Walking;
-import org.powerbot.game.api.methods.input.Mouse;
-import org.powerbot.game.api.methods.interactive.Players;
-import org.powerbot.game.api.methods.node.Menu;
-import org.powerbot.game.api.methods.node.SceneEntities;
-import org.powerbot.game.api.methods.tab.Inventory;
-import org.powerbot.game.api.util.Filter;
-import org.powerbot.game.api.util.Time;
-import org.powerbot.game.api.wrappers.Entity;
-import org.powerbot.game.api.wrappers.Locatable;
-import org.powerbot.game.api.wrappers.Tile;
-import org.powerbot.game.api.wrappers.node.Item;
-import org.powerbot.game.api.wrappers.node.SceneObject;
-import org.powerbot.game.bot.event.listener.PaintListener;
-
-import scripts.farming.EntityWrapper;
-
-@Manifest(authors = { "djabby" }, name = "PathRecorder", description = "s=start/stop,w=write,r=read,r=run", version = 1.37)
+@Manifest(authors = {"djabby"}, name = "PathRecorder", description = "s=start/stop,w=write,r=read,r=run", version = 1.38)
 public class PathRecorder extends ActiveScript implements KeyListener,
-		PaintListener {
-	
-	
-	public void onStop() {
-		System.out.println("onStop");
-	}
-	
-	LoopTask lt = new LoopTask() {
-		
-		public void stop() {
-			System.out.println("ONSTOP");
-			super.stop();
-		}
+        PaintListener {
 
-		@Override
-		public int loop() {
-			System.out.println("0=" + PathRecorder.this.isLocked());
-			System.out.println("1=" + PathRecorder.this.isPaused());
-			System.out.println("2=" + PathRecorder.this.isRunning());
-			System.out.println("3=" + PathRecorder.this.isSilentlyLocked());
-			return 0;
-		}
-		
-	};
+    @Override
+    public void onStop() {
+        stop();
+    }
 
-	public class Path {
-		List<Tile> nodes;
-		int i;
+    Node lt = new Node() {
 
-		public Path(List<Tile> nodes_) {
-			nodes = nodes_;
-			i = 0;
-		}
+        @Override
+        public boolean activate() {
+            return true;
+        }
 
-		public boolean isFinished() {
-			return i >= nodes.size();
-		}
+        @Override
+        public void execute() {
+        }
+    };
 
-		public void run() {
-			Tile current = nodes.get(i);
-			if (!tilesEqual(current, Walking.getDestination()))
-				Walking.walk(current);
-			if (current.distance(Players.getLocal().getLocation()) <= inRange)
-				i++;
-		}
-	}
+    public class Path {
+        final List<Tile> nodes;
+        int i;
 
-	Path path = null;
-	List<Tile> currentPath;
-	Tile getLatest = null;
+        public Path(List<Tile> nodes_) {
+            nodes = nodes_;
+            i = 0;
+        }
 
-	enum State {
-		NIL, COLLECT, STOPPED, RUNNING
-	};
+        public boolean isFinished() {
+            return i >= nodes.size();
+        }
 
-	int minimalDistance = 7;
-	int inRange = 6;
-	State state = State.NIL;
+        public void run() {
+            Tile current = nodes.get(i);
+            if (!tilesEqual(current, Walking.getDestination()))
+                Walking.walk(current);
+            int inRange = 6;
+            if (current.distance(Players.getLocal().getLocation()) <= inRange)
+                i++;
+        }
+    }
 
-	public void keyPressed(KeyEvent e) {
-	}
+    private Path path = null;
+    private List<Tile> currentPath;
+    private Tile getLatest = null;
 
-	@Override
-	public void keyReleased(KeyEvent e) {
+    enum State {
+        NIL, COLLECT, STOPPED, RUNNING
+    }
 
-	}
+    private final int minimalDistance = 7;
+    private State state = State.NIL;
 
-	public <T extends Entity & Locatable> boolean safeInteract(T obj,
-			final String interaction, Filter<String> filter) {
-		if (obj != null && obj.isOnScreen()) {
-			// move mouse to the object to get all options
-			
-			//Mouse.move(obj.getNextViewportPoint());
-			Mouse.move(obj.getCentralPoint());
-			String[] actions = Menu.getActions();
-			String[] options = Menu.getOptions();
-			int size = actions.length;
-			for (int i=0;i<size;i++) {
-				if (actions[i].equals(interaction) && filter.accept(options[i])) {
-					return obj.interact(interaction, options[i]);
-				}
-			}
-		}
-		return false;
-	}
+    public void keyPressed(KeyEvent e) {
+    }
 
-	public <T extends Entity & Locatable> boolean safeUseWith(Item item, T obj,
-			Filter<String> filter) {
-		if (item != null) {
-			// select only if item isn't selected yet
-			if (item.getWidgetChild().getBorderThickness() < 2)
-				item.getWidgetChild().interact("Use");
-			System.out.println("And now try to use::");
-			return safeInteract(obj, "Use", filter);
-		} else {
-			return false;
-		}
-	}
+    @Override
+    public void keyReleased(KeyEvent e) {
 
-	class Constants {
-		public static final int LANTADYME = 7218;
-		public static final int LEPRECHAUN = 7557;
-	}
+    }
 
-	public void examples() {
-		Inventory.getItem(5096).getWidgetChild().interact("Use");
-		//SceneEntities.getNearest(7847).interact("Use","Marigold seed -> Flower Patch");
-		SceneObject patch = SceneEntities.getNearest(7847);
-		EntityWrapper vew = new EntityWrapper(patch);
-		Mouse.apply(vew,new Filter<Point>() {
-			public boolean accept(Point p) {
-				return Menu.select("Use","Marigold seed -> Flower Patch");
-			}
-		});
-		
-		/** Example 1: Let the leprechaun note our lantadyme **/
-		/*if (safeUseWith(Inventory.getItemAt(0),
-				SceneEntities.getNearest(7848), new Filter<String>() {
-					public boolean accept(String option) {
-						return option.toLowerCase().contains("-> marigold");
-					}
-				})) {
-			System.out.println("Lantadyme successfully noted");
-		} else {
-			System.out.println("Something went oh-so wrong :(");
-		}*/
-/*
-		/// Example 2: Talk with the leprechaun, NOT with the gardener 
-		if (safeInteract(NPCs.getNearest(Constants.LEPRECHAUN), "Talk-to",
-				new Filter<String>() {
-					public boolean accept(String option) {
-						return option.equalsIgnoreCase("Tool leprechaun");
-					}
-				})) {
-			System.out.println("Talking with leprechaun...");
-		} else {
-			System.out.println("F*ck this gardener!");
-		}*/
-	}
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		switch (e.getKeyChar()) {
-		case 'm':
-			// actually not part of the path recorder
-			// SceneObject pipe = SceneEntities.getNearest(20210);
-			Mouse.click(false);
-			Time.sleep(1000);
-			// while(!Menu.isOpen()) Time.sleep(10);
-			System.out.println("#actions=" + Menu.getActions().length);
-			System.out.println("#options=" + Menu.getOptions().length);
-			for (String action : Menu.getActions()) {
-				System.out.println(action);
-			}
-			for (String action : Menu.getOptions()) {
-				System.out.println(action);
-			}
-			break;
-		case 's':
-			switch (state) {
-			case NIL:
-			case STOPPED:
-				currentPath = new ArrayList<Tile>();
-				state = State.COLLECT;
-				break;
-			case COLLECT:
-			case RUNNING:
-				state = State.STOPPED;
-				getLatest = null;
-				path = null;
-				break;
-			}
-			break;
-		case 'w':
-			if (state != State.NIL) {
-				System.out.println("new Tile[] {");
-				boolean b = false;
-				Tile lastTile = null;
-				for (Tile tile : currentPath) {
-					// filter wrong tiles
-					if (lastTile != null
-							&& tile.distance(lastTile) < minimalDistance * 1.5) {
-						System.out.print(b ? "," : "");
-						System.out.println("new Tile(" + tile.getX() + ","
-								+ tile.getY() + "," + tile.getPlane() + ")");
-						b = true;
-					}
-					lastTile = tile;
-				}
-				System.out.println("};");
-			}
-			break;
-		case 'r':
-			if (state == State.STOPPED) {
-				state = State.RUNNING;
-				path = new Path(currentPath);
-			}
-		}
+    @Override
+    public void keyTyped(KeyEvent e) {
+        switch (e.getKeyChar()) {
+            case 'm':
+                Mouse.click(false);
+                Task.sleep(1000);
+                System.out.println("#actions=" + Menu.getActions().length);
+                System.out.println("#options=" + Menu.getOptions().length);
+                for (String action : Menu.getActions()) {
+                    System.out.println(action);
+                }
+                for (String action : Menu.getOptions()) {
+                    System.out.println(action);
+                }
+                break;
+            case 's':
+                switch (state) {
+                    case NIL:
+                    case STOPPED:
+                        currentPath = new ArrayList<>();
+                        state = State.COLLECT;
+                        break;
+                    case COLLECT:
+                    case RUNNING:
+                        state = State.STOPPED;
+                        getLatest = null;
+                        path = null;
+                        break;
+                }
+                break;
+            case 'w':
+                if (state != State.NIL) {
+                    System.out.println("new Tile[] {");
+                    boolean b = false;
+                    Tile lastTile = null;
+                    for (Tile tile : currentPath) {
+                        if (lastTile != null
+                                && tile.distance(lastTile) < minimalDistance * 1.5) {
+                            System.out.print(b ? "," : "");
+                            System.out.println("new Tile(" + tile.getX() + ","
+                                    + tile.getY() + "," + tile.getPlane() + ")");
+                            b = true;
+                        }
+                        lastTile = tile;
+                    }
+                    System.out.println("};");
+                }
+                break;
+            case 'r':
+                if (state == State.STOPPED) {
+                    state = State.RUNNING;
+                    path = new Path(currentPath);
+                }
+        }
 
-	}
+    }
 
-	BufferedImage proggy;
+    private BufferedImage proggy;
 
-	public void setup() {
-		this.submit(lt);
-		BufferedImage img;
-		try {
-			File imgPath = new File("src/scripts/images/proggy.png");
-			if (imgPath.exists()) {
-				System.out.println("File found!");
-				img = ImageIO.read(imgPath);
-				int w = img.getWidth(null);
-				int h = img.getHeight(null);
-				System.out.println("Width: " + h);
-				proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-				Graphics g = proggy.getGraphics();
-				g.drawImage(img, 0, 0, null);
-			}
-		} catch (IOException e) {
-			proggy = new BufferedImage(0,0,BufferedImage.TYPE_INT_RGB);
-			e.printStackTrace();
-		}
+    @Override
+    public void onStart() {
+        BufferedImage img;
+        log.info("Converted too new api by Wyn");
+        try {
+            File imgPath = new File("src/scripts/images/proggy.png");
+            if (imgPath.exists()) {
+                System.out.println("File found!");
+                img = ImageIO.read(imgPath);
+                int w = img.getWidth(null);
+                int h = img.getHeight(null);
+                System.out.println("Width: " + h);
+                proggy = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                Graphics g = proggy.getGraphics();
+                g.drawImage(img, 0, 0, null);
+            }
+        } catch (IOException e) {
+            proggy = new BufferedImage(0, 0, BufferedImage.TYPE_INT_RGB);
+            e.printStackTrace();
+        }
+    }
 
-		provide(new Collect());
-		provide(new Running());
-		//provide(new Example());
-	}
-	
-	public class Example extends Strategy implements Task {
-		public void run() {
-			try {
-			examples();
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		public boolean validate() {
-			return true;
-		}
-	}
+    private final Tree scriptTree = new Tree(new Node[]{new Collect(), new Running()});
 
-	public class Collect extends Strategy implements Task {
-		public void run() {
-			if (currentPath.size() == 0) {
-				getLatest = Players.getLocal().getLocation();
-				currentPath.add(getLatest);
-			} else if (!tilesEqual(Players.getLocal().getLocation(), getLatest)
-					&& getLatest.distance(Players.getLocal().getLocation()) > minimalDistance) {
-				getLatest = Players.getLocal().getLocation();
-				currentPath.add(getLatest);
-			}
-		}
 
-		public boolean validate() {
-			return state == State.COLLECT;
-		}
-	}
+    @Override
+    public int loop() {
+        final Node stateNode = scriptTree.state();
+        if (stateNode != null) {
+            scriptTree.set(stateNode);
+            final Node setNode = scriptTree.get();
+            if (setNode != null) {
+                getContainer().submit(setNode);
+                setNode.join();
+            }
+        }
+        return Random.nextInt(100, 200);
+    }
 
-	public class Running extends Strategy implements Task {
-		public void run() {
-			path.run();
-		}
 
-		public boolean validate() {
-			return state == State.RUNNING && !path.isFinished();
-		}
-	}
+    private class Collect extends Node {
+        public void execute() {
+            if (currentPath.size() == 0) {
+                getLatest = Players.getLocal().getLocation();
+                currentPath.add(getLatest);
+            } else if (!tilesEqual(Players.getLocal().getLocation(), getLatest)
+                    && getLatest.distance(Players.getLocal().getLocation()) > minimalDistance) {
+                getLatest = Players.getLocal().getLocation();
+                currentPath.add(getLatest);
+            }
+        }
 
-	public static boolean tilesEqual(Tile tile1, Tile tile2) {
-		return tile1.getX() == tile2.getX() && tile1.getY() == tile2.getY()
-				&& tile1.getPlane() == tile2.getPlane();
-	}
+        public boolean activate() {
+            return state == State.COLLECT;
+        }
+    }
 
-	@Override
-	public void onRepaint(Graphics g) {
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 510, 200, 30);
-		Point p = Mouse.getLocation();
-		g.drawLine(0, (int)p.getY(), 640, (int)p.getY());
-		g.drawLine((int)p.getX(), 0,(int) p.getX(), 480);
-		try {
-			float[] scales = { 1f, 1f, 1f, 0.95f };
-			float[] offsets = new float[4];
-			RescaleOp rescale = new RescaleOp(scales, offsets, null);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.drawImage(proggy, rescale, 0, 390);
-			//g2d.drawImage(proggy, 6, 395, null);
-			// g2d.drawImage(proggy, rescale, 6, 395);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}	
-		if (state == State.NIL)
-			return;
-		for (Tile t : currentPath) {
+    private class Running extends Node {
+        public void execute() {
+            path.run();
+        }
 
-			Polygon[] bounds = t.getBounds();
-			if (bounds.length == 1) {
-				g.setColor(Color.RED);
-				g.fillPolygon(bounds[0]);
+        public boolean activate() {
+            return state == State.RUNNING && !path.isFinished();
+        }
+    }
 
-			}
-		}
+    private static boolean tilesEqual(Tile tile1, Tile tile2) {
+        return tile1.getX() == tile2.getX() && tile1.getY() == tile2.getY()
+                && tile1.getPlane() == tile2.getPlane();
+    }
 
-	}
+    public void onRepaint(Graphics g) {
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 510, 200, 30);
+        Point p = Mouse.getLocation();
+        g.drawLine(0, (int) p.getY(), 640, (int) p.getY());
+        g.drawLine((int) p.getX(), 0, (int) p.getX(), 480);
+        try {
+            float[] scales = {1f, 1f, 1f, 0.95f};
+            float[] offsets = new float[4];
+            RescaleOp rescale = new RescaleOp(scales, offsets, null);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.drawImage(proggy, rescale, 0, 390);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (state == State.NIL)
+            return;
+        for (Tile t : currentPath) {
 
+            Polygon[] bounds = t.getBounds();
+            if (bounds.length == 1) {
+                g.setColor(Color.RED);
+                g.fillPolygon(bounds[0]);
+
+            }
+        }
+
+    }
 }
